@@ -1,0 +1,1972 @@
+<title>Холодный склад WPP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a blueprint-desk — one big 3D viewer as the "drawing", every other section is a title-block sheet underneath it. */
+:root{
+  --bg:#0d151e;
+  --panel:#141f2b;
+  --panel-2:#1a2836;
+  --line:#2a3d50;
+  --ink:#e4ecf3;
+  --muted:#8ea2b4;
+  --accent:#f2a33a;      /* safety amber */
+  --steel:#a9bccc;       /* galvanized */
+  --ok:#5cc18b; --warn:#f2c94c; --bad:#ef6b5b;
+  --font-display:"Unbounded", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5}
+body{background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:48px 48px;background-attachment:fixed;background-color:var(--bg)}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(13,21,30,.55),rgba(13,21,30,.94) 70%);pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:1320px;margin:0 auto;padding:0 20px 80px}
+a{color:var(--accent)}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4.2vw,50px);line-height:1.08;letter-spacing:-.01em}
+h2{font-family:var(--font-display);font-weight:500;font-size:clamp(20px,2.4vw,28px);line-height:1.2}
+h3{font-size:17px;font-weight:600}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:3px;background:var(--panel)}
+.tag b{color:var(--accent);font-weight:600}
+
+/* header */
+header.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header.top .who{font-family:var(--font-mono);font-size:13px;color:var(--muted)}
+.hero{display:grid;grid-template-columns:1.35fr 1fr;gap:32px;padding:34px 0 24px;align-items:end}
+.hero p.lead{font-size:18px;color:var(--muted);max-width:62ch;margin:14px 0 0}
+.deadline{border:1px solid var(--accent);background:linear-gradient(180deg,rgba(242,163,58,.12),rgba(242,163,58,.03));padding:18px 20px;border-radius:6px}
+.deadline .lbl{font-family:var(--font-mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.deadline .cd{font-family:var(--font-display);font-size:34px;line-height:1.1;margin:6px 0 4px}
+.deadline .sub{font-size:14px;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:6px 0 28px}
+.fact{background:var(--panel);padding:14px 16px}
+.fact .v{font-family:var(--font-mono);font-size:22px;font-weight:600}
+.fact .v small{font-size:13px;color:var(--muted);font-weight:400}
+.fact .k{font-size:13px;color:var(--muted);margin-top:2px}
+
+/* viewer */
+.viewer{display:grid;grid-template-columns:1fr 340px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel);min-height:660px}
+.stage{position:relative;min-height:660px;background:#0b1219}
+#c3d{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.ax{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;border:1.5px solid var(--steel);border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-size:12px;color:var(--ink);background:rgba(13,21,30,.75)}
+.toolbar{position:absolute;left:12px;top:12px;right:12px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.toolbar>*{pointer-events:auto}
+.btn{font:500 13px/1 var(--font-body);color:var(--ink);background:rgba(20,31,43,.92);border:1px solid var(--line);padding:9px 12px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{border-color:var(--steel)}
+.btn.on{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:#1a1206;border-color:var(--accent);font-weight:600}
+.btn:focus-visible,.chip:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hud{position:absolute;left:12px;bottom:12px;right:290px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;pointer-events:none}
+.slider{pointer-events:auto;background:rgba(20,31,43,.92);border:1px solid var(--line);border-radius:5px;padding:8px 12px;display:flex;align-items:center;gap:10px;font-size:13px}
+.slider label{color:var(--muted);white-space:nowrap}
+.slider input{width:150px;accent-color:var(--accent)}
+.slider output{font-family:var(--font-mono);font-size:12px;min-width:44px;text-align:right}
+.stage-note{position:absolute;right:12px;bottom:14px;max-width:260px;font-family:var(--font-mono);font-size:11px;color:var(--muted);text-align:right;pointer-events:none}
+#tip{position:absolute;pointer-events:none;background:var(--ink);color:#0d151e;font-size:12px;font-weight:600;padding:4px 8px;border-radius:3px;transform:translate(12px,12px);display:none;white-space:nowrap}
+#loadLegend{position:absolute;right:12px;top:60px;background:rgba(20,31,43,.94);border:1px solid var(--line);border-radius:5px;padding:10px 12px;font-size:12px;display:none;max-width:250px}
+#loadLegend div{display:flex;gap:8px;align-items:center;margin:3px 0}
+#loadLegend i{width:18px;height:3px;display:inline-block;border-radius:2px}
+#stepTitle{position:absolute;left:50%;top:64px;transform:translateX(-50%);font-family:var(--font-display);font-size:15px;background:rgba(13,21,30,.88);border:1px solid var(--accent);color:var(--accent);padding:8px 14px;border-radius:5px;display:none;white-space:nowrap}
+
+aside.side{border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;max-height:760px}
+.side .sec{padding:14px 16px;border-bottom:1px solid var(--line)}
+.side .ttl{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 12.5px/1 var(--font-body);color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:7px 10px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--sw,#888);opacity:.35}
+.chip[aria-pressed="true"]{color:var(--ink);border-color:var(--steel)}
+.chip[aria-pressed="true"] .dot{opacity:1}
+#info{padding:16px;overflow:auto;flex:1}
+#info h3{font-family:var(--font-display);font-weight:500;font-size:18px;line-height:1.25;margin-bottom:8px}
+#info .doc{display:inline-block;font-family:var(--font-mono);font-size:11.5px;color:var(--accent);border:1px solid rgba(242,163,58,.4);padding:2px 6px;border-radius:3px;margin:0 4px 6px 0}
+#info dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13.5px;margin:10px 0}
+#info dt{color:var(--muted)}
+#info dd{margin:0;font-family:var(--font-mono);font-size:13px}
+#info p{font-size:14px;margin:8px 0;color:#c9d6e1}
+#info .flag{border-left:3px solid var(--warn);background:rgba(242,201,76,.07);padding:8px 10px;font-size:13px;margin-top:10px}
+.partlist{display:flex;flex-direction:column;gap:2px;margin-top:8px}
+.partlist button{all:unset;cursor:pointer;font-size:13.5px;padding:6px 8px;border-radius:4px;display:flex;justify-content:space-between;gap:8px;color:#c9d6e1}
+.partlist button:hover{background:var(--panel-2)}
+.partlist button span{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+
+/* sheets */
+section.sheet{margin-top:56px}
+.sheet-head{display:flex;align-items:baseline;gap:14px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:22px;flex-wrap:wrap}
+.sheet-head .no{font-family:var(--font-mono);color:var(--accent);font-size:13px}
+.sheet-head p{color:var(--muted);margin:0;font-size:14px;flex-basis:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px 20px}
+.card h3{margin-bottom:8px}
+.card p{margin:6px 0;color:#c9d6e1;font-size:15px;max-width:65ch}
+.card ul{margin:8px 0 0;padding-left:18px;color:#c9d6e1;font-size:15px}
+.card li{margin:4px 0}
+.mail{font-size:15px}
+.mail .hdr{display:grid;grid-template-columns:110px 1fr;gap:4px 12px;font-size:14px;padding-bottom:12px;border-bottom:1px dashed var(--line);margin-bottom:12px}
+.mail .hdr span:nth-child(odd){color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:6px}
+.pill{display:inline-block;font-family:var(--font-mono);font-size:11px;padding:2px 7px;border-radius:999px;border:1px solid}
+.pill.sup{color:var(--accent);border-color:rgba(242,163,58,.5)}
+.pill.exc{color:var(--muted);border-color:var(--line)}
+.pill.ref{color:#8fc3ff;border-color:rgba(143,195,255,.45)}
+
+.bars{display:flex;flex-direction:column;gap:14px}
+.bar .row{display:flex;justify-content:space-between;gap:12px;font-size:14px;margin-bottom:5px}
+.bar .row .mono{font-size:13px;color:var(--muted)}
+.bar .track{height:12px;background:var(--panel-2);border:1px solid var(--line);border-radius:3px;position:relative;overflow:hidden}
+.bar .fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#4f9f78,var(--ok));border-right:2px solid #d9ffe9}
+.scale{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:4px}
+
+.issues{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.issue{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:6px;padding:14px 16px}
+.issue.hi{border-left-color:var(--bad)}
+.issue .sev{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--warn)}
+.issue.hi .sev{color:var(--bad)}
+.issue h3{margin:4px 0 6px;font-size:16px}
+.issue p{margin:4px 0;font-size:14px;color:#c9d6e1}
+.issue .src{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.issue .ask{margin-top:8px;font-size:13.5px;color:var(--ink)}
+.issue .ask b{color:var(--accent);font-weight:600}
+
+.checklist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.checklist li{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:11px 14px;font-size:15px}
+.checklist input{margin-top:4px;accent-color:var(--accent);width:16px;height:16px;flex:none}
+.checklist small{display:block;color:var(--muted);font-size:13px}
+
+.timeline{display:grid;grid-template-columns:repeat(5,1fr);gap:0;position:relative;margin-top:8px}
+.timeline::before{content:"";position:absolute;left:0;right:0;top:15px;height:2px;background:var(--line)}
+.tl{position:relative;padding-top:34px;padding-right:12px}
+.tl::before{content:"";position:absolute;top:8px;left:0;width:16px;height:16px;border-radius:50%;background:var(--panel);border:2px solid var(--steel)}
+.tl.now::before{border-color:var(--accent);background:var(--accent)}
+.tl.dl::before{border-color:var(--bad)}
+.tl .d{font-family:var(--font-mono);font-size:13px;color:var(--accent)}
+.tl .t{font-size:14px;color:#c9d6e1}
+
+svg.section text{font-family:var(--font-mono);font-size:12px;fill:var(--muted)}
+footer{margin-top:60px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+
+@media (max-width:1050px){
+  .viewer{grid-template-columns:1fr}
+  aside.side{border-left:0;border-top:1px solid var(--line);max-height:none}
+  .facts{grid-template-columns:repeat(3,1fr)}
+  .hero{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr 1fr}
+}
+@media (max-width:700px){
+  .stage-note{display:none}
+  .hud{right:12px}
+  .grid2,.grid3,.issues{grid-template-columns:1fr}
+  .facts{grid-template-columns:1fr 1fr}
+  .stage{min-height:520px}
+  .viewer{min-height:0}
+  .timeline{grid-template-columns:1fr;gap:4px}
+  .timeline::before{display:none}
+  .slider input{width:110px}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* ===== added: navigation ===== */
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 22px}
+nav.toc a{font-family:var(--font-mono);font-size:12px;color:var(--muted);text-decoration:none;border:1px solid var(--line);background:var(--panel);padding:5px 9px;border-radius:3px}
+nav.toc a:hover{color:var(--ink);border-color:var(--steel)}
+nav.toc a.new{color:var(--accent);border-color:rgba(242,163,58,.45)}
+
+/* ===== added: production → installation theatre ===== */
+.prod{display:grid;grid-template-columns:minmax(0,1fr) 400px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.pstage{position:relative;min-height:720px;background:#0b1219}
+#p3d{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#pLabels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.callout{position:absolute;transform:translate(-50%,calc(-100% - 10px));font:500 12px/1.25 var(--font-body);color:var(--ink);background:rgba(13,21,30,.88);border:1px solid var(--steel);padding:4px 7px;border-radius:3px;white-space:nowrap}
+.callout b{color:var(--accent);font-weight:600}
+.callout::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:10px;background:var(--steel)}
+.ptool{position:absolute;left:12px;top:12px;right:12px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.ptool>*{pointer-events:auto}
+.phase{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:9px 10px;border-radius:5px;border:1px solid var(--line);background:rgba(20,31,43,.92);color:var(--muted);cursor:pointer}
+.phase.on{color:var(--accent);border-color:var(--accent)}
+#pBanner{position:absolute;left:50%;top:62px;transform:translateX(-50%);font-family:var(--font-display);font-size:15px;background:rgba(13,21,30,.9);border:1px solid var(--accent);color:var(--accent);padding:8px 14px;border-radius:5px;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+#pClock{position:absolute;right:12px;top:110px;font-family:var(--font-mono);font-size:12px;color:var(--muted);background:rgba(13,21,30,.85);border:1px solid var(--line);padding:6px 9px;border-radius:4px;text-align:right}
+#pClock b{display:block;color:var(--ink);font-size:15px;font-weight:600}
+.pbar{position:absolute;left:12px;right:12px;bottom:12px;display:grid;grid-template-columns:repeat(18,1fr);gap:3px}
+.pbar button{all:unset;cursor:pointer;height:28px;border-radius:3px;background:rgba(20,31,43,.92);border:1px solid var(--line);font-family:var(--font-mono);font-size:11px;color:var(--muted);display:grid;place-items:center;position:relative;overflow:hidden}
+.pbar button i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(242,163,58,.28)}
+.pbar button span{position:relative}
+.pbar button.f{border-top:3px solid #8fc3ff}
+.pbar button.l{border-top:3px solid #c7a6ff}
+.pbar button.s{border-top:3px solid #5cc18b}
+.pbar button.on{border-color:var(--accent);color:var(--ink)}
+.pbar button.done{color:var(--ink)}
+.pbar button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.pside{border-left:1px solid var(--line);display:flex;flex-direction:column;max-height:820px;min-width:0}
+.pside .head{padding:16px;border-bottom:1px solid var(--line)}
+.pside .head .k{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pside .head h3{font-family:var(--font-display);font-weight:500;font-size:19px;line-height:1.25;margin:6px 0 0}
+.pside .nav{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+#pInfo{padding:14px 16px 18px;overflow:auto;flex:1;font-size:14px}
+#pInfo dl{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0 0 12px;font-size:13.5px}
+#pInfo dt{color:var(--muted)}
+#pInfo dd{margin:0;font-family:var(--font-mono);font-size:12.5px}
+#pInfo h4{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px;font-weight:500}
+#pInfo ol,#pInfo ul{margin:0;padding-left:20px;color:#c9d6e1}
+#pInfo li{margin:5px 0;line-height:1.45}
+#pInfo p{margin:6px 0;color:#c9d6e1}
+#pInfo .doc{display:inline-block;font-family:var(--font-mono);font-size:11.5px;color:var(--accent);border:1px solid rgba(242,163,58,.4);padding:2px 6px;border-radius:3px;margin:0 4px 6px 0}
+#pInfo .flag{border-left:3px solid var(--warn);background:rgba(242,201,76,.07);padding:8px 10px;font-size:13px;margin-top:12px}
+#pInfo .res{border-left:3px solid var(--ok);background:rgba(92,193,139,.07);padding:8px 10px;font-size:13px;margin-top:12px}
+
+/* ===== added: gantt ===== */
+.gantt{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow-x:auto}
+.gantt table{min-width:820px}
+.gantt td{padding:7px 10px;border-bottom:1px solid var(--line);font-size:13.5px}
+.gantt td.g{padding:0;position:relative;width:62%}
+.gantt .wk{display:grid;grid-template-columns:repeat(12,1fr);height:100%;position:absolute;inset:0}
+.gantt .wk span{border-left:1px dashed rgba(42,61,80,.8)}
+.gantt .b{position:absolute;top:8px;bottom:8px;border-radius:3px}
+.gantt .b.f{background:#8fc3ff}
+.gantt .b.l{background:#c7a6ff}
+.gantt .b.s{background:#5cc18b}
+.gantt .b.d{background:var(--accent)}
+.gantt th.w{text-align:center;padding:8px 0}
+.gantt .whead{display:grid;grid-template-columns:repeat(12,1fr)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:14px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
+
+/* ===== added: estimate ===== */
+.est-ctl{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.ctl{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:9px 12px;display:flex;align-items:center;gap:10px;font-size:13.5px}
+.ctl label{color:var(--muted)}
+.ctl select,.ctl input,.est input{font:500 13px var(--font-mono);background:var(--panel-2);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:5px 7px}
+.ctl input[type=number]{width:70px}
+.est input{width:110px;text-align:right}
+.est input.q{width:72px}
+.est td{font-size:13.5px}
+.est tr.grp td{background:var(--panel-2);font-family:var(--font-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.est tr.off td{opacity:.38}
+.est tr.sub td{font-weight:600;border-bottom:1px solid var(--steel)}
+.est td.r{text-align:right}
+.est .note{display:block;color:var(--muted);font-size:12px}
+.totals{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:16px}
+.totals div{background:var(--panel);padding:14px 16px}
+.totals .v{font-family:var(--font-mono);font-size:21px;font-weight:600;font-variant-numeric:tabular-nums}
+.totals .k{font-size:13px;color:var(--muted)}
+.totals .hl{background:linear-gradient(180deg,rgba(242,163,58,.16),rgba(242,163,58,.04))}
+.totals .hl .v{color:var(--accent)}
+.vatbox{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+#copyMsg{font-size:13px;color:var(--ok);margin-left:8px}
+
+@media (max-width:1050px){
+  .prod{grid-template-columns:1fr}
+  .pside{border-left:0;border-top:1px solid var(--line);max-height:none}
+  .totals{grid-template-columns:1fr 1fr}
+}
+@media (max-width:700px){
+  .pstage{min-height:560px}
+  #pClock{display:none}
+  .pbar{grid-template-columns:repeat(9,1fr)}
+  .vatbox{grid-template-columns:1fr}
+  .totals{grid-template-columns:1fr}
+  #pBanner{font-size:13px}
+}
+</style>
+<div class="wrap">
+
+<header class="top">
+  <span class="tag">RFQ <b>526H00</b> · WPP: Cold Warehouse · пакет «REVISION 02»</span>
+  <span class="who">KCOI LLP → ЭкоМикс · получено 12.11.2026, 17:35</span>
+</header>
+<nav class="toc" aria-label="Листы"><a href="#letter">01 Письмо</a><a href="#scope">02 Объём</a><a href="#geometry">03 Конструкция</a><a href="#calc">04 Расчёт</a><a href="#issues">05 Вопросы</a><a href="#docs">06 Папка</a><a href="#checklist">07 Чек-лист</a><a class="new" href="#lifecycle">08 Производство → монтаж 3D</a><a class="new" href="#gantt">09 График</a><a class="new" href="#bom">10 Ведомость</a><a class="new" href="#estimate">11 Смета с НДС 16 %</a><a class="new" href="#qa">12 Документы</a></nav>
+
+<div class="hero">
+  <div>
+    <h1>Холодный склад для ветропарка 77&nbsp;МВт в&nbsp;Жанаозене</h1>
+    <p class="lead">Бескаркасный арочный ангар 23 × 15 м из оцинкованных C-профилей на монолитной плите. KCOI просит спроектировать, изготовить и поставить его на условиях DDP. Ниже здание разобрано по слоям, а письмо и 58 файлов комплекта сведены в одну картину: что строим, что входит в объём поставщика и что нужно уточнить до подачи. Листы 08–12 показывают весь путь здания в 3D от завода до акта приёмки, график, ведомость поставки и смету DDP с НДС 16 %.</p>
+  </div>
+  <div class="deadline" aria-live="polite">
+    <div class="lbl">Срок подачи · 20.11.2026, конец дня по Актау</div>
+    <div class="cd mono" id="countdown">—</div>
+    <div class="sub">Конец рабочего дня принят как 18:00 (UTC+5). Пароль к коммерческому предложению отправляется позже, по запросу KCOI.</div>
+  </div>
+</div>
+
+<div class="facts">
+  <div class="fact"><div class="v">23 × 15 <small>м</small></div><div class="k">габарит в плане, оси 1–5 × А–Г</div></div>
+  <div class="fact"><div class="v">+7,200 <small>м</small></div><div class="k">верх арки от ±0,000 (R = 7500)</div></div>
+  <div class="fact"><div class="v">345 <small>м²</small></div><div class="k">общая площадь (застройка 386,4)</div></div>
+  <div class="fact"><div class="v">12,6 <small>т</small></div><div class="k">металл по КМ, из них 11,4 т оцинк. листа</div></div>
+  <div class="fact"><div class="v">0,80 / 0,77 <small>кПа</small></div><div class="k">снег / ветер</div></div>
+  <div class="fact"><div class="v">≥ 30 <small>лет</small></div><div class="k">срок службы, здание не утеплено</div></div>
+</div>
+
+<!-- 3D VIEWER -->
+<section class="viewer" aria-label="3D-модель холодного склада">
+  <div class="stage" id="stage">
+    <canvas id="c3d" aria-label="Интерактивная 3D-модель. Вращение мышью, клик по элементу показывает его описание."></canvas>
+    <div class="labels" id="labels"></div>
+    <div class="toolbar">
+      <button class="btn primary" id="bAssemble" type="button">▶ Собрать по шагам</button>
+      <button class="btn" id="bExplode" type="button">Разобрать</button>
+      <button class="btn" id="bGate" type="button">Открыть ворота</button>
+      <button class="btn" id="bLoads" type="button">Нагрузки</button>
+      <button class="btn" id="bRotate" type="button">Автовращение</button>
+      <span style="flex:1"></span>
+      <button class="btn" data-view="iso" type="button">Изометрия</button>
+      <button class="btn" data-view="front" type="button">Ось 1</button>
+      <button class="btn" data-view="top" type="button">План</button>
+      <button class="btn" data-view="inside" type="button">Внутри</button>
+    </div>
+    <div id="stepTitle"></div>
+    <div id="loadLegend">
+      <div><i style="background:#9fd3ff"></i>Снег 0,64 кН/м² (μ = 0,8, зона наклона &lt; 60°)</div>
+      <div><i style="background:#f2a33a"></i>Ветер, давление, зона A: +2,1 кН/м²</div>
+      <div><i style="background:#ef6b5b"></i>Отсос, зона B: −2,7 кН/м², зона C: −1,2 кН/м²</div>
+      <div><i style="background:#c7a6ff"></i>Пол: 5 кН/м², катушки СН 4 × 10 кН, погрузчик FL3 31,5 кН/колесо</div>
+      <div class="muted" style="margin-top:6px">CD-62223, разделы 6.2–6.4</div>
+    </div>
+    <div id="tip"></div>
+    <div class="hud">
+      <div class="slider"><label for="sExplode">Разборка</label><input type="range" id="sExplode" min="0" max="100" value="0"><output id="oExplode" class="mono">0 %</output></div>
+      <div class="slider"><label for="sCut">Разрез вдоль</label><input type="range" id="sCut" min="0" max="100" value="0"><output id="oCut" class="mono">нет</output></div>
+    </div>
+    <div class="stage-note">Модель построена по чертежам АС/КЖ/КМ/ЭП/ОВ/ВН, масштаб 1:1 в метрах.<br>Склад наполнен схематично по плану 66580.</div>
+  </div>
+
+  <aside class="side">
+    <div class="sec">
+      <div class="ttl">Слои здания</div>
+      <div class="chips" id="layerChips"></div>
+    </div>
+    <div id="info"></div>
+  </aside>
+</section>
+
+<!-- SECTION 1: LETTER -->
+<section class="sheet" id="letter">
+  <div class="sheet-head"><span class="no">ЛИСТ 01</span><h2>Что написал KCOI</h2><p>Письмо Aamer Baig, Project Procurement Manager, разобрано по пунктам. Справа то, что из этого следует для подачи.</p></div>
+  <div class="grid2">
+    <div class="card mail">
+      <div class="hdr">
+        <span>От</span><span>Aamer Baig, KCOI LLP (Актау)</span>
+        <span>Кому</span><span>Коммерческий, aset.alibi, Mirko</span>
+        <span>Тема</span><span>FW: 526H00 WPP: Cold Warehouse</span>
+        <span>Дата</span><span class="mono">12.11.2026, 17:35</span>
+      </div>
+      <h3>Предмет запроса</h3>
+      <p>Одна позиция, 1 шт.: разработка и поставка здания холодного склада, включая проектирование, расчёты конструкций, рабочие чертежи, изготовление и доставку элементов здания.</p>
+      <h3 style="margin-top:14px">Базовый объём</h3>
+      <ul>
+        <li>Проектирование и расчёты конструкций</li>
+        <li>Рабочие (КМД) чертежи</li>
+        <li>Изготовление элементов здания</li>
+        <li>Поставка полного комплекта до места назначения</li>
+      </ul>
+      <h3 style="margin-top:14px">Коммерческие условия</h3>
+      <ul>
+        <li><b>DDP Жанаозен</b>, Мангистауская обл.: в цене транспорт, погрузка/разгрузка, растаможка, пошлины и налоги</li>
+        <li><b>Оплата</b>: 30 дней после приёмки материалов и сертификатов</li>
+        <li><b>Срок</b>: 20.11.2026, конец дня по Актау</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Что из этого следует</h3>
+      <p><b>Два отдельных файла.</b> Техническое предложение без цен и коммерческое с ценами. Коммерческое шифруется паролем, пароль не прикладывается: KCOI вскрывает предложения всех участников одновременно.</p>
+      <p><b>Молчание означает согласие.</b> Если отклонение не заявлено, предложение считается технически соответствующим. Все исключения и оговорки нужно перечислить отдельным списком.</p>
+      <p><b>Монтаж под вопросом.</b> Вступление письма говорит про «design, procurement, manufacture, delivery, and installation», а строка позиции и базовый объём монтаж не упоминают. Лучше дать монтаж отдельной опцией.</p>
+      <p><b>Фундамент не ваш.</b> По ТЗ расчёт фундаментов исключён из объёма поставщика, но закладные М-1 и узел опирания арок нужно увязать с проектом КЖ.</p>
+      <p><b>Подтвердить участие.</b> KCOI просит подтвердить получение RFQ и участие либо прислать официальный отказ.</p>
+      <h3 style="margin-top:14px">Что приложить к техчасти</h3>
+      <ul>
+        <li>Опыт в строительстве и модульных зданиях</li>
+        <li>Квалификации, лицензии, сертификаты</li>
+        <li>График выполнения и срок завершения</li>
+        <li>Список аналогичных проектов с заказчиками</li>
+        <li>Референции и примеры поставленных зданий</li>
+        <li>Завод-изготовитель и место производства</li>
+        <li>Отклонения, исключения, оговорки</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <h3>Хронология</h3>
+    <div class="timeline">
+      <div class="tl"><div class="d">21.09.2026</div><div class="t">Расчёт CD-62223, рев. 02</div></div>
+      <div class="tl"><div class="d">21.10.2026</div><div class="t">ТЗ «Main Technical Requirements» (CMO)</div></div>
+      <div class="tl now"><div class="d">12.11.2026</div><div class="t">RFQ получен, пакет REVISION 02</div></div>
+      <div class="tl"><div class="d">ASAP</div><div class="t">Подтвердить участие, отправить вопросы</div></div>
+      <div class="tl dl"><div class="d">20.11.2026</div><div class="t">Подача техчасти и зашифрованной коммерческой части</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: SCOPE -->
+<section class="sheet" id="scope">
+  <div class="sheet-head"><span class="no">ЛИСТ 02</span><h2>Исходные данные и граница объёма</h2><p>По «Technical_Specification_Cold Warehouse_EN_21-10-26.docx». Отметка «Поставщик» означает, что пункт входит в ваш объём.</p></div>
+  <div class="grid2">
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Параметр</th><th>Значение</th></tr></thead>
+        <tbody>
+          <tr><td>Площадка</td><td>Мангистауская обл., Жанаозен</td></tr>
+          <tr><td>Снег</td><td class="num">0,80 кПа (I район)</td></tr>
+          <tr><td>Ветер</td><td class="num">0,77 кПа, базовая скорость 35 м/с</td></tr>
+          <tr><td>Сейсмика agR</td><td class="num">0,040g (475 лет) · 0,071g (2475 лет)</td></tr>
+          <tr><td>Расчётная температура</td><td class="num">−18,0 °C / +34 °C</td></tr>
+          <tr><td>Срок службы</td><td class="num">не менее 30 лет</td></tr>
+          <tr><td>Степень огнестойкости</td><td class="num">IIIa (СП РК 2.02-101-2022)</td></tr>
+          <tr><td>Предел огнестойкости</td><td class="num">R15, ограждения EI15</td></tr>
+          <tr><td>Категория / класс</td><td class="num">C · C0</td></tr>
+          <tr><td>Огнезащита</td><td class="num">нет (R15 без защиты проверяет поставщик)</td></tr>
+          <tr><td>Кран-балка</td><td class="num">нет</td></tr>
+          <tr><td>Ограждение</td><td class="num">не утеплённое</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Работа</th><th>Чья</th></tr></thead>
+        <tbody>
+          <tr><td>Расчёт надземного стального каркаса</td><td><span class="pill sup">Поставщик</span></td></tr>
+          <tr><td>Проект: конструкции, архитектура, ОВ, ЭО, ВК, пожарный водопровод</td><td><span class="pill sup">Поставщик</span> <span class="pill ref">по MR</span></td></tr>
+          <tr><td>Вентиляция: расчёт и чертежи</td><td><span class="pill sup">Поставщик</span></td></tr>
+          <tr><td>Ограждающие конструкции (без утепления)</td><td><span class="pill sup">Поставщик</span></td></tr>
+          <tr><td>Проверка профилей на R15 без огнезащиты</td><td><span class="pill sup">Поставщик</span></td></tr>
+          <tr><td>Расчёт фундаментов</td><td><span class="pill exc">Исключено</span> <span class="pill ref">CD-62223</span></td></tr>
+          <tr><td>Пожарный водопровод</td><td><span class="pill ref">по чертежам</span></td></tr>
+          <tr><td>Молниезащита и заземление</td><td><span class="pill ref">по чертежам</span></td></tr>
+          <tr><td>Вводы инженерных сетей</td><td><span class="pill ref">по чертежам</span></td></tr>
+          <tr><td>Антикоррозионная защита</td><td><span class="pill ref">по MR</span></td></tr>
+          <tr><td>Монтаж</td><td><span class="pill exc">не определено</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: SECTION DRAWING -->
+<section class="sheet" id="geometry">
+  <div class="sheet-head"><span class="no">ЛИСТ 03</span><h2>Как устроено здание</h2><p>Поперечный разрез по DD-62096/62097 и узлы КМ 62106. Арка работает как оболочка: отдельного каркаса нет, несущая способность берётся из гофра C-профиля.</p></div>
+  <div class="grid2">
+    <div class="card" style="overflow-x:auto">
+      <svg class="section" viewBox="0 0 560 330" width="100%" role="img" aria-label="Поперечный разрез: арка радиусом 7500 мм, пролёт 15000 мм, верх +7,200">
+        <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#5a6e80" stroke-width="1"/></pattern></defs>
+        <!-- scale 30px per m, origin z=0 at x=55, y=0.000 at 262 -->
+        <rect x="40" y="262" width="480" height="6" fill="#7d8b98"/>
+        <rect x="25" y="268" width="510" height="30" fill="url(#hatch)" opacity=".7"/>
+        <line x1="10" y1="271" x2="550" y2="271" stroke="#8ea2b4" stroke-dasharray="4 4"/>
+        <path d="M 55.2 262 A 225 225 0 0 1 504.8 262" fill="none" stroke="#a9bccc" stroke-width="5"/>
+        <path d="M 58.6 262 A 221.6 221.6 0 0 1 501.4 262" fill="none" stroke="#a9bccc" stroke-width="1" opacity=".6"/>
+        <line x1="280" y1="271" x2="148" y2="85" stroke="#f2a33a" stroke-width="1.2"/>
+        <text x="200" y="168" fill="#f2a33a" style="fill:#f2a33a">R 7500</text>
+        <rect x="223" y="91" width="114" height="30" fill="rgba(143,195,255,.12)" stroke="#8fc3ff"/>
+        <text x="268" y="110" style="fill:#8fc3ff">Ок1</text>
+        <line x1="223" y1="262" x2="223" y2="54" stroke="#a9bccc" stroke-width="2"/>
+        <line x1="337" y1="262" x2="337" y2="54" stroke="#a9bccc" stroke-width="2"/>
+        <line x1="223" y1="124" x2="337" y2="124" stroke="#a9bccc" stroke-width="2"/>
+        <line x1="223" y1="91" x2="337" y2="91" stroke="#a9bccc" stroke-width="2"/>
+        <rect x="226" y="124" width="108" height="138" fill="rgba(242,163,58,.08)" stroke="#f2a33a" stroke-dasharray="3 3"/>
+        <text x="245" y="200" style="fill:#f2a33a">ВР1</text>
+        <text x="236" y="216">3800×4600</text>
+        <line x1="545" y1="46" x2="545" y2="262" stroke="#8ea2b4"/>
+        <line x1="538" y1="46" x2="552" y2="46" stroke="#8ea2b4"/><line x1="538" y1="262" x2="552" y2="262" stroke="#8ea2b4"/>
+        <text x="470" y="42">+7,200</text>
+        <text x="470" y="258">±0,000</text>
+        <text x="470" y="290">−0,300</text>
+        <text x="345" y="128">+4,600 Б1</text>
+        <text x="345" y="95">+5,700 Б1</text>
+        <line x1="55" y1="315" x2="505" y2="315" stroke="#8ea2b4"/>
+        <line x1="55" y1="309" x2="55" y2="321" stroke="#8ea2b4"/><line x1="505" y1="309" x2="505" y2="321" stroke="#8ea2b4"/>
+        <text x="262" y="312">15000</text>
+        <text x="40" y="20">Разрез по оси 1, вид снаружи</text>
+      </svg>
+    </div>
+    <div class="card">
+      <h3>Конструктив по слоям</h3>
+      <ul>
+        <li><b>Основание.</b> Просадочный суглинок ИГЭ-1 заменяется подушкой ПГС 1050 мм (Kупл ≥ 0,98). Грунтовые воды до 6 м не вскрыты.</li>
+        <li><b>Плита.</b> 24 × 15,8 × 0,2 м, C30/37 на сульфатостойком цементе, Ø12 шаг 200 сверху и снизу. Плита одновременно служит полом.</li>
+        <li><b>Опирание.</b> Арочный сегмент крепится к уголку, уголок к закладным плиты Г-образным узлом. Закладные М-1 идут с шагом 2 м.</li>
+        <li><b>Арка.</b> C-профиль 305 × 114 мм, оцинкованный, R = 7500. Соседние профили закатываются в замок, расчёт считает их одним элементом 3,6 мм.</li>
+        <li><b>Торцы.</b> Стойки Ст1 и балки Б1 из трубы □100×5 (С245), обшивка прямыми панелями Л2.</li>
+        <li><b>Проёмы.</b> Ворота ВР1 3800 × 4600 с калиткой, дверь Д1 2060 × 860, два окна Ок1 3800 × 1000 на +4,700.</li>
+        <li><b>Покрытие.</b> По КМ: 2 слоя ГФ-021 + 2 слоя ПФ-115, ≥ 60 мкм, заводское. По АС: горячее цинкование.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: CALC -->
+<section class="sheet" id="calc">
+  <div class="sheet-head"><span class="no">ЛИСТ 04</span><h2>Что показал расчёт проектировщика</h2><p>CD-62223 рев. 02 (VR Current, ЛИРА-САПР 2024 R2.1). Полоса показывает долю от допустимого значения; все проверки с большим запасом. Этот расчёт поставщик должен подтвердить своим.</p></div>
+  <div class="grid2">
+    <div class="card">
+      <div class="bars" id="bars"></div>
+      <div class="scale"><span>0 %</span><span>25 %</span><span>50 %</span><span>75 %</span><span>100 % допустимого</span></div>
+    </div>
+    <div class="card">
+      <h3>Нагрузки в расчёте</h3>
+      <div class="tbl" style="border:0;background:none">
+      <table>
+        <tbody>
+          <tr><td>Снег, нормативный</td><td class="num">0,8 × μ 0,8 = 0,64 кН/м²</td></tr>
+          <tr><td>Снег на один профиль 0,305 м</td><td class="num">0,2 кН/м</td></tr>
+          <tr><td>Ветер q на h = 7,5 м</td><td class="num">0,77 кН/м², Ce = 2,6</td></tr>
+          <tr><td>Зона A / B / C</td><td class="num">+2,1 / −2,7 / −1,2 кН/м²</td></tr>
+          <tr><td>Склад, равномерная</td><td class="num">5 кН/м²</td></tr>
+          <tr><td>Катушки кабеля СН</td><td class="num">2 × 1,9 т → 4 точки по 10 кН</td></tr>
+          <tr><td>Погрузчик FL3</td><td class="num">ось 63 кН, пятно 200 × 200</td></tr>
+          <tr><td>Сочетания</td><td class="num">STR A1 · GEO A2 · EQU</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: ISSUES -->
+<section class="sheet" id="issues">
+  <div class="sheet-head"><span class="no">ЛИСТ 05</span><h2>Расхождения в комплекте: вопросы до подачи</h2><p>Письмо считает предложение соответствующим, если отклонение не заявлено. Поэтому эти пункты лучше задать KCOI сейчас или прямо записать в список оговорок.</p></div>
+  <div class="issues">
+    <div class="issue hi"><div class="sev">Критично для цены</div><h3>Толщина металла арки: 1,8 или 1,2 мм</h3><p>Расчёт CD-62223 считает C-профиль толщиной 1,8 мм. Чертежи КМ 62106/62269 и спецификация 62104 дают панели Л1/Л2 из листа 1,2 мм (11,4 т).</p><div class="src">CD-62223 §5 ↔ DD-62106, GA-62104</div><div class="ask"><b>Спросить:</b> какую толщину закладывать в цену, или считать по своему расчёту?</div></div>
+    <div class="issue hi"><div class="sev">Критично для объёма</div><h3>Монтаж: в объёме или нет</h3><p>Вступление письма упоминает installation, а строка позиции и «Base Scope» заканчиваются доставкой.</p><div class="src">Письмо RFQ, п. 1 и 2</div><div class="ask"><b>Предложить:</b> монтаж отдельной опцией с собственной ценой.</div></div>
+    <div class="issue hi"><div class="sev">Нет в комплекте</div><h3>Material Requisition отсутствует</h3><p>ТЗ отсылает к MR по антикоррозии и составу проекта (конструкции, архитектура, ОВ, ЭО, ВК, ВПВ). Папка названа «MR», но самого документа MR в ней нет.</p><div class="src">Technical Specification, строки «Refer to Material Requisition»</div><div class="ask"><b>Запросить:</b> MR с требованиями к покрытию и составу документации.</div></div>
+<div class="issue hi"><div class="sev">Критично для технологии</div><h3>Арку нельзя везти готовой</h3><p>Панель Л1 после гибки имеет хорду 15 м и высоту 7,5 м и в транспортный габарит не входит. Панели прокатывают и гнут на площадке мобильной линией из рулона.</p><div class="src">DD-62106, GA-62104 ↔ RFQ «завод и место производства»</div><div class="ask"><b>Заявить</b> два места производства: завод (каркас, ворота) и площадку (панели).</div></div>
+    <div class="issue"><div class="sev">Противоречие</div><h3>Два разных решения фундамента</h3><p>Альбом АС (62095–62101, рев. 02) показывает 14 столбчатых Стф1 с рандбалками и плитой. Альбом КЖ (62287–62292, рев. 00 от 27.09) и расчёт показывают сплошную плиту 24 × 15,8 × 0,2 на ПГС.</p><div class="src">GA-62100, GA-62101 ↔ DB-62290, CD-62223 §8</div><div class="ask"><b>Уточнить:</b> какой альбом действующий. От этого зависят узел опирания и закладные.</div></div>
+    <div class="issue"><div class="sev">Противоречие</div><h3>Ворота на одном торце или на двух</h3><p>АС-план: ворота ВР1 только по оси 1, по оси 5 дверь Д1. План ЭО 63277: ворота с пандусами на обоих торцах.</p><div class="src">DD-62096 ↔ DD-63277</div><div class="ask"><b>Уточнить</b> количество ворот: это один из самых дорогих элементов.</div></div>
+    <div class="issue"><div class="sev">Противоречие</div><h3>Степень огнестойкости и марка стали</h3><p>ТЗ требует IIIa, общие данные КМ 62268 указывают II. Сталь: С245 в КМ, C235 в расчёте.</p><div class="src">Tech Spec ↔ RB-62268, CD-62223 §5</div><div class="ask"><b>Заявить</b> принятые значения в техчасти.</div></div>
+    <div class="issue"><div class="sev">Противоречие</div><h3>Покрытие стали</h3><p>КМ: эмаль ПФ-115 по грунту ГФ-021, ≥ 60 мкм. АС: горячее цинкование по ГОСТ 9.307 с подкраской «Цинол». Для 30 лет в Мангистау цинкование надёжнее.</p><div class="src">RB-62268 п. 17 ↔ RB-62095 п. 10</div><div class="ask"><b>Предложить</b> цинк + окраска как базу.</div></div>
+    <div class="issue"><div class="sev">Неполнота</div><h3>Недостающие листы КМ</h3><p>Ведомость КМ 62268 перечисляет DD-62260 (ригели цоколя Рц-1) и DD-62270 (крепления светильников). В папке их нет.</p><div class="src">RB-62268, ведомость листов</div><div class="ask"><b>Запросить</b> оба листа: Рц-1 и есть узел опирания арки.</div></div>
+    <div class="issue"><div class="sev">Мелочь</div><h3>Климат и изыскания расходятся</h3><p>Холодная пятидневка: −14,9 °C (КМ), −17 °C (АС), −18 °C (ТЗ). Изыскания: GEO Engineering Solutions 2024 против Caspian Geo Services 2026.</p><div class="src">RB-62268, RB-62095, Tech Spec</div><div class="ask"><b>Принять</b> самое жёсткое значение (−18 °C) и указать это.</div></div>
+    <div class="issue"><div class="sev">Мелочь</div><h3>Сейсмичность: 6 или 7 баллов</h3><p>АС: 6 баллов по ОСЗ-475 и 7 по ОСЗ-2475. КМ: 7 баллов. ТЗ даёт только ускорения 0,040g и 0,071g.</p><div class="src">RB-62095 п. 2.2, RB-62268</div><div class="ask"><b>Считать</b> по ускорениям ТЗ, баллы привести справочно.</div></div>
+  </div>
+</section>
+
+<!-- SECTION 6: DOCS -->
+<section class="sheet" id="docs">
+  <div class="sheet-head"><span class="no">ЛИСТ 06</span><h2>Что лежит в папке</h2><p>58 файлов: 56 PDF, реестр MDR (xlsx) и ТЗ (docx). Шифр комплекта 5726000329-3В-ВСП-ХС. Генпроектировщик KCOI, проектировщик VR Current, заказчик Mangistau Renewables BV.</p></div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Раздел</th><th>Файлов</th><th>Ключевые документы</th><th>Для поставщика</th></tr></thead>
+      <tbody>
+        <tr><td>CIVIL (A): АС, КЖ, КМ, расчёт, ВПВ</td><td class="num">24</td><td>RB-62095 общие данные · DD-62096/97 планы и разрезы · DB-62289…62292 фундамент · RB-62268, GA-62104, DD-62106/62269 металл · CD-62223 расчёт EN/RU · RB-62247…EB-62250 пожарный водопровод</td><td>Основа: геометрия, металл, проёмы, нагрузки</td></tr>
+        <tr><td>INS (I): ПС, СОУЭ, PAGA</td><td class="num">24</td><td>DD-65154/65155/65193 планы склада · FB-65008/65173/65189 структурные схемы · SF-65069 спецификация (32 стр.)</td><td>Кабель-каналы, места крепления, термошкаф NSGate</td></tr>
+        <tr><td>ELE (E): электрика</td><td class="num">4</td><td>RB-63275 · FB-63276 схема ЩР, Pр = 2,17 кВт · DD-63277 план освещения · GA-63280 кабельный журнал</td><td>8 LED 60 Вт на тросах +5,0 м, аварийные 18 Вт, заземление</td></tr>
+        <tr><td>HVAC (V): вентиляция</td><td class="num">3</td><td>RB-66028 · DD-66029 план · GA-66030 спецификация</td><td>4 дефлектора Turbovent ТА-400 Ø400, без отопления</td></tr>
+        <tr><td>TLC (C): видеонаблюдение</td><td class="num">1</td><td>DD-66580 план оборудования и зон складирования</td><td>Камеры CAM 40–42, шкаф ВН №13, раскладка зон</td></tr>
+        <tr><td>ТЗ и реестр</td><td class="num">2</td><td>Technical Specification 21.10.26 · MDR 09.10.2026</td><td>Граница объёма и статусы чертежей</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 7: CHECKLIST -->
+<section class="sheet" id="checklist">
+  <div class="sheet-head"><span class="no">ЛИСТ 07</span><h2>Чек-лист подачи</h2><p>Отметки сохраняются только в этом браузере.</p></div>
+  <ul class="checklist" id="checklistUl">
+    <li><input type="checkbox" id="ck1"><label for="ck1">Подтвердить получение RFQ и участие<small>Ответом на письмо Aamer Baig, Aamer.Baig@kcoi.kz</small></label></li>
+    <li><input type="checkbox" id="ck2"><label for="ck2">Отправить технические вопросы<small>Толщина 1,2/1,8 мм, монтаж, MR, фундамент, количество ворот, листы 62260/62270</small></label></li>
+    <li><input type="checkbox" id="ck3"><label for="ck3">Получить предложение завода по арочной системе<small>C-профиль 305 × 114, R = 7500, 23 м, торцы с проёмами</small></label></li>
+    <li><input type="checkbox" id="ck4"><label for="ck4">Свой расчёт каркаса на R15, снег, ветер и сейсмику<small>Подтвердить или заменить результаты CD-62223</small></label></li>
+    <li><input type="checkbox" id="ck5"><label for="ck5">Логистика DDP Жанаозен<small>Транспорт, разгрузка, растаможка, пошлины, НДС</small></label></li>
+    <li><input type="checkbox" id="ck6"><label for="ck6">Техническое предложение без цен<small>Опыт, лицензии, график, референции, завод и место производства</small></label></li>
+    <li><input type="checkbox" id="ck7"><label for="ck7">Список отклонений и оговорок отдельным разделом<small>Всё, что не заявлено, считается принятым</small></label></li>
+    <li><input type="checkbox" id="ck8"><label for="ck8">Коммерческое предложение в зашифрованном файле<small>Пароль не прикладывать, отдать по запросу KCOI</small></label></li>
+    <li><input type="checkbox" id="ck9"><label for="ck9">Отправить до 20.11.2026, конец дня по Актау</label></li>
+  </ul>
+</section>
+
+
+<!-- ================= ADDED: SECTION 8 PRODUCTION → INSTALLATION 3D ================= -->
+<section class="sheet" id="lifecycle">
+  <div class="sheet-head"><span class="no">ЛИСТ 08</span><h2>От производства до монтажа: 18 этапов в 3D</h2><p>Полный путь здания: проект, завод, доставка DDP, площадка, сдача. Каждый этап — отдельная анимированная сцена с описанием операций, людей, техники, сроков, контроля качества и документов. «▶ Весь цикл» проигрывает этапы подряд; можно выбрать любой этап на шкале внизу. Время на сцене площадки ускорено.</p></div>
+  <section class="prod" aria-label="3D: производство, доставка и монтаж">
+    <div class="pstage" id="pStage">
+      <canvas id="p3d" aria-label="Интерактивная 3D-сцена этапа. Вращение мышью, колесо — масштаб."></canvas>
+      <div id="pLabels"></div>
+      <div class="ptool">
+        <button class="btn primary" id="pPlay" type="button">▶ Весь цикл</button>
+        <button class="phase" data-ph="0" type="button">Производство · 1–6</button>
+        <button class="phase" data-ph="6" type="button">Логистика · 7</button>
+        <button class="phase" data-ph="7" type="button">Площадка · 8–18</button>
+        <span style="flex:1"></span>
+        <button class="btn" id="pLbl" type="button">Подписи</button>
+        <button class="btn" id="pCam" type="button">Камера этапа</button>
+      </div>
+      <div id="pBanner">—</div>
+      <div id="pClock"><span>от подписания договора</span><b id="pWeek">—</b><span id="pDays">—</span></div>
+      <div class="pbar" id="pBar"></div>
+    </div>
+    <aside class="pside">
+      <div class="head">
+        <div class="k" id="pKicker">—</div>
+        <h3 id="pTitle">—</h3>
+        <div class="nav">
+          <button class="btn" id="pPrev" type="button">← Назад</button>
+          <button class="btn" id="pNext" type="button">Далее →</button>
+          <button class="btn" id="pReplay" type="button">↻ Повтор</button>
+        </div>
+      </div>
+      <div id="pInfo"></div>
+    </aside>
+  </section>
+</section>
+
+<!-- ================= ADDED: SECTION 9 GANTT ================= -->
+<section class="sheet" id="gantt">
+  <div class="sheet-head"><span class="no">ЛИСТ 09</span><h2>График выполнения: 11 недель от договора до акта</h2><p>Его KCOI просит приложить к техчасти. Отсчёт идёт от подписания договора и аванса (если аванса нет, закупка рулона начинается после согласования КМ). Работы на площадке занимают 18–20 рабочих дней.</p></div>
+  <div class="gantt"><table id="ganttT"></table></div>
+  <div class="legend"><span><i style="background:#8fc3ff"></i>Завод</span><span><i style="background:#c7a6ff"></i>Логистика</span><span><i style="background:#5cc18b"></i>Площадка</span><span><i style="background:var(--accent)"></i>Проектирование и документы</span></div>
+</section>
+
+<!-- ================= ADDED: SECTION 10 BILL OF MATERIALS ================= -->
+<section class="sheet" id="bom">
+  <div class="sheet-head"><span class="no">ЛИСТ 10</span><h2>Ведомость поставки</h2><p>Что физически приезжает на площадку. Массы взяты по КМ (GA-62104) или оценены по геометрии модели, если в комплекте нет листа. Колонка «Где делают» нужна для пункта RFQ о заводе и месте производства.</p></div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Марка</th><th>Наименование</th><th>Кол-во</th><th>Масса</th><th>Где делают</th><th>Основание</th></tr></thead>
+      <tbody>
+        <tr><td class="num">Л1</td><td>Арочная панель C 305 × 114, R = 7500, развёртка ≈ 23,0 м</td><td class="num">76 шт</td><td class="num">≈ 10,0 т при 1,2 мм</td><td><span class="pill sup">Площадка</span> мобильная линия</td><td class="num">DD-62106, GA-62104</td></tr>
+        <tr><td class="num">Л2</td><td>Торцевая панель прямая, C 305 × 114, длина по месту 0,5…7,2 м</td><td class="num">≈ 98 шт</td><td class="num">≈ 1,4 т</td><td><span class="pill sup">Площадка</span> мобильная линия</td><td class="num">DD-62269</td></tr>
+        <tr><td class="num">—</td><td>Рулон оцинкованной стали 1,2 мм, ширина 610 мм, Z275 (Л1 + Л2)</td><td class="num">3 рулона</td><td class="num">11,4 т</td><td>Металлобаза / прокатчик</td><td class="num">GA-62104, ГОСТ 14918-2020</td></tr>
+        <tr><td class="num">Ст1</td><td>Стойки торцов, труба □100 × 5, С245</td><td class="num">6 шт</td><td class="num" rowspan="2">0,77 т</td><td>Завод, сварочный участок</td><td class="num">DD-62106, ГОСТ 30245-2003</td></tr>
+        <tr><td class="num">Б1</td><td>Балки обрамления проёмов (+4,600, +5,700, +2,100), □100 × 5</td><td class="num">5 шт</td><td>Завод</td><td class="num">DD-62106</td></tr>
+        <tr><td class="num">Рц-1</td><td>Ригель цоколя, уголок по периметру ≈ 76 м (сечение по DD-62260, листа нет)</td><td class="num">≈ 76 м</td><td class="num">≈ 0,93 т (оценка ∟100×8)</td><td>Завод</td><td class="num">RB-62268</td></tr>
+        <tr><td class="num">ВР1</td><td>Ворота распашные 3800 × 4600 с калиткой ДСН 2060 × 960</td><td class="num">1 шт</td><td class="num">≈ 0,45 т</td><td>Завод / покупные</td><td class="num">DD-62097, ГОСТ 31174-2017</td></tr>
+        <tr><td class="num">Д1</td><td>Дверь стальная наружная ДСН 2060 × 860</td><td class="num">1 шт</td><td class="num">≈ 0,07 т</td><td>Покупная</td><td class="num">ГОСТ 31173-2016</td></tr>
+        <tr><td class="num">Ок1</td><td>Окно алюминиевое 3800 × 1000, одинарное остекление</td><td class="num">2 шт</td><td class="num">≈ 0,08 т</td><td>Покупное</td><td class="num">ГОСТ 21519-2003</td></tr>
+        <tr><td class="num">ВЕ1–4</td><td>Дефлектор Turbovent ТА-400, Ø400, с проходкой и уплотнением</td><td class="num">4 шт</td><td class="num">≈ 0,04 т</td><td>Покупные</td><td class="num">GA-66030</td></tr>
+        <tr><td class="num">—</td><td>Крепёж: самонарезающие винты с ЭПДМ-шайбой, болты кл. B, анкеры, заклёпки</td><td class="num">1 компл.</td><td class="num">≈ 0,25 т</td><td>Покупной</td><td class="num">КМД</td></tr>
+        <tr><td class="num">—</td><td>Нащельники, отливы, уголки примыканий из оцинкованного листа</td><td class="num">1 компл.</td><td class="num">≈ 0,15 т</td><td>Завод</td><td class="num">КМД</td></tr>
+        <tr><td class="num">ЭО</td><td>Светильники LED 60 Вт IP65 × 8, аварийные 18 Вт × 3, щит ЩР, кабель, трос, контур заземления</td><td class="num">1 компл.</td><td class="num">≈ 0,3 т</td><td>Покупные (опция)</td><td class="num">DD-63277, FB-63276</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================= ADDED: SECTION 11 ESTIMATE WITH VAT 16% ================= -->
+<section class="sheet" id="estimate">
+  <div class="sheet-head"><span class="no">ЛИСТ 11</span><h2>Смета DDP Жанаозен с НДС 16 %</h2><p>Расчёт для коммерческой части. Цены ориентировочные (тенге, ноябрь 2026) и заполнены как пример: замените их котировками завода, металлобазы и перевозчика, и итог пересчитается сразу. НДС 16 % по Налоговому кодексу РК, действующему с 01.01.2026. Монтаж и электрооборудование вынесены опциями, как рекомендовано на листе 05.</p></div>
+  <div class="est-ctl">
+    <div class="ctl"><label for="eThk">Толщина арки</label><select id="eThk"><option value="1.2">1,2 мм (КМ)</option><option value="1.8">1,8 мм (расчёт)</option></select></div>
+    <div class="ctl"><label for="eGates">Ворота ВР1</label><select id="eGates"><option value="1">1 шт (АС)</option><option value="2">2 шт (ЭО)</option></select></div>
+    <div class="ctl"><label for="eMont">Монтаж</label><select id="eMont"><option value="1">включить</option><option value="0">без монтажа</option></select></div>
+    <div class="ctl"><label for="eEO">Электрооборудование</label><select id="eEO"><option value="1">включить</option><option value="0">без него</option></select></div>
+    <div class="ctl"><label for="eImp">Ввоз из-за пределов РК</label><select id="eImp"><option value="0">нет, завод в РК</option><option value="1">да</option></select></div>
+    <div class="ctl"><label for="eOh">Накладные и прибыль, %</label><input type="number" id="eOh" value="12" min="0" max="60" step="0.5"></div>
+    <div class="ctl"><label for="eRisk">Резерв, %</label><input type="number" id="eRisk" value="3" min="0" max="30" step="0.5"></div>
+    <div class="ctl"><label for="eVat">НДС, %</label><input type="number" id="eVat" value="16" min="0" max="30" step="0.5"></div>
+  </div>
+  <div class="tbl est">
+    <table>
+      <thead><tr><th>№</th><th>Статья</th><th>Ед.</th><th class="r">Кол-во</th><th class="r">Цена без НДС, ₸</th><th class="r">Сумма без НДС, ₸</th></tr></thead>
+      <tbody id="estBody"></tbody>
+    </table>
+  </div>
+  <div class="totals">
+    <div><div class="v" id="tNet">—</div><div class="k">Итого без НДС</div></div>
+    <div><div class="v" id="tVat">—</div><div class="k" id="tVatK">НДС 16 %</div></div>
+    <div class="hl"><div class="v" id="tGross">—</div><div class="k">Итого с НДС, DDP Жанаозен</div></div>
+    <div><div class="v" id="tM2">—</div><div class="k">за 1 м² общей площади (345 м²), с НДС</div></div>
+  </div>
+  <div class="vatbox">
+    <div class="card">
+      <h3>Как считается НДС</h3>
+      <ul>
+        <li>База: все статьи без НДС, плюс накладные, прибыль и резерв. НДС = база × <span id="vatTxt" class="mono">16 %</span>.</li>
+        <li>При ввозе из ЕАЭС импортный НДС 16 % платится по заявлению о ввозе. При DDP он входит в цену и затем зачитывается поставщиком как плательщиком НДС в РК.</li>
+        <li>Ввоз из третьих стран: таможенная пошлина по ЕТТ ЕАЭС и импортный НДС 16 % на таможенную стоимость плюс пошлину. Строка «Таможня» включается переключателем.</li>
+        <li>Счёт-фактура выписывается электронно (ЭСФ) в ИС ЭСФ. Отдельная строка НДС в коммерческом предложении снимает вопросы при вскрытии.</li>
+        <li>Оплата по RFQ: 30 дней после приёмки материалов и сертификатов. Аванса нет, поэтому стоимость денег за ≈ 3 месяца заложена в накладных.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Разбивка по разделам</h3>
+      <div class="bars" id="estBars"></div>
+      <p style="margin-top:14px"><button class="btn" id="copyEst" type="button">Скопировать смету для Excel</button><span id="copyMsg" role="status"></span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ADDED: SECTION 12 QA DOCS ================= -->
+<section class="sheet" id="qa">
+  <div class="sheet-head"><span class="no">ЛИСТ 12</span><h2>Документы качества и сдачи</h2><p>По RFQ оплата начинается после приёмки материалов и сертификатов. Без этого комплекта 30 дней не начнут отсчитываться.</p></div>
+  <div class="grid3">
+    <div class="card"><h3>Завод</h3><ul>
+      <li>Сертификаты 3.1 на рулоны и трубу</li>
+      <li>Журнал входного контроля</li>
+      <li>Аттестаты сварщиков и технологии сварки</li>
+      <li>Журнал сварочных работ, протоколы ВИК</li>
+      <li>Протоколы толщины цинкового покрытия</li>
+      <li>Паспорт на металлоконструкции (ГОСТ 23118-2019)</li>
+      <li>Паспорта ворот, двери, окон, дефлекторов</li>
+      <li>Декларации о соответствии ЕАЭС, сертификат СТ-KZ для местного содержания</li>
+    </ul></div>
+    <div class="card"><h3>Доставка</h3><ul>
+      <li>Упаковочные листы по местам</li>
+      <li>Комплектовочная ведомость по маркам КМД</li>
+      <li>ТТН или CMR, при импорте декларация на товары</li>
+      <li>Страховой полис на груз</li>
+      <li>ЭСФ с выделенным НДС 16 %</li>
+      <li>Акт приёмки материалов на площадке (запускает 30 дней)</li>
+    </ul></div>
+    <div class="card"><h3>Монтаж и сдача</h3><ul>
+      <li>ППР, допуск, наряд-допуски на работы на высоте и с краном</li>
+      <li>Акт приёмки фундамента и исполнительная схема закладных М-1</li>
+      <li>Общий журнал работ</li>
+      <li>Акты скрытых работ: узлы опирания арки на Рц-1</li>
+      <li>Исполнительные схемы геометрии арки и торцов</li>
+      <li>Протоколы ЭТЛ: изоляция, заземление</li>
+      <li>Исполнительный комплект КМД с изменениями</li>
+      <li>Акт приёмки здания, гарантийное письмо</li>
+    </ul></div>
+  </div>
+</section>
+
+<footer>
+  Источники: письмо KCOI от 12.11.2026 и папка «WPP MR COLD HOUSE REVISION 02 / ANNEX 1» (58 файлов). Значения взяты из документов с указанными шифрами. 3D-модели иллюстративные, размеры основных элементов соответствуют чертежам. Цены в смете ориентировочные и должны быть заменены котировками до подачи.
+</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+"use strict";
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- countdown ---------- */
+const DEADLINE = new Date('2026-11-20T18:00:00+05:00');
+function tick(){
+  const el=document.getElementById('countdown');
+  let ms=DEADLINE-new Date();
+  if(ms<=0){el.textContent='срок истёк';return;}
+  const d=Math.floor(ms/864e5); ms-=d*864e5;
+  const h=Math.floor(ms/36e5); ms-=h*36e5;
+  const m=Math.floor(ms/6e4);
+  el.textContent=d+' дн '+String(h).padStart(2,'0')+' ч '+String(m).padStart(2,'0')+' мин';
+}
+tick(); setInterval(tick,30000);
+
+/* ---------- checklist storage ---------- */
+document.querySelectorAll('#checklistUl input').forEach(cb=>{
+  try{cb.checked=localStorage.getItem('cw-'+cb.id)==='1';}catch(e){}
+  cb.addEventListener('change',()=>{try{localStorage.setItem('cw-'+cb.id,cb.checked?'1':'0');}catch(e){}});
+});
+
+/* ---------- calc bars ---------- */
+const checks=[
+  ['Горизонтальное смещение X','1,1 / 50 мм',1.1/50],
+  ['Смещение Y','5,2 / 50 мм',5.2/50],
+  ['Вертикальное смещение Z','7,5 / 50 мм (H/150)',7.5/50],
+  ['Осадка плиты','4 / 120 мм',4/120],
+  ['Сдвиг по подошве плиты','523 / 2200 кН',523.3/2200],
+  ['Сдвиг по низу подушки ПГС','523 / 3407 кН',523.3/3406.7],
+  ['Давление на ПГС','148 / 10 930 кПа',148.4/10930.1],
+  ['Давление на известняк ИГЭ-2','165 / 3248 кПа',165.4/3248.2],
+  ['Опрокидывание (1 / Kmin = 23,6)','K = 23,6 ≥ 1',1/23.63]
+];
+const bars=document.getElementById('bars');
+checks.forEach(c=>{
+  const pct=Math.max(c[2]*100,0.6);
+  const d=document.createElement('div');d.className='bar';
+  d.innerHTML='<div class="row"><span>'+c[0]+'</span><span class="mono">'+c[1]+' · '+(c[2]*100).toFixed(1).replace('.',',')+' %</span></div><div class="track"><div class="fill" style="width:'+pct+'%"></div></div>';
+  bars.appendChild(d);
+});
+
+/* ---------- 3D ---------- */
+if(typeof THREE==='undefined'){document.getElementById('info').innerHTML='<p>Не удалось загрузить three.js. Обновите страницу.</p>';return;}
+const V3=THREE.Vector3;
+const stage=document.getElementById('stage');
+const canvas=document.getElementById('c3d');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.localClippingEnabled=true;
+renderer.outputEncoding=THREE.sRGBEncoding;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0b1219);
+scene.fog=new THREE.Fog(0x0b1219,70,160);
+const camera=new THREE.PerspectiveCamera(38,1,0.1,600);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true;controls.dampingFactor=0.08;
+controls.maxPolarAngle=Math.PI*0.495;controls.minDistance=4;controls.maxDistance=110;
+
+scene.add(new THREE.HemisphereLight(0xcfe3ff,0x3a3328,0.75));
+const sun=new THREE.DirectionalLight(0xfff1dc,1.15);
+sun.position.set(-30,40,-18);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-30,right:30,top:30,bottom:-30,near:1,far:120});
+sun.target.position.set(11.5,0,7.5);scene.add(sun);scene.add(sun.target);
+const fill=new THREE.DirectionalLight(0x8fb5ff,0.35);fill.position.set(40,20,40);scene.add(fill);
+
+const root=new THREE.Group();scene.add(root);
+const R=7.5, CY=-0.3, CZ=7.5, L=23;
+const TH0=Math.asin(0.3/R);
+const cut=new THREE.Plane(new V3(0,0,1),100);
+
+function mat(color,o){return new THREE.MeshStandardMaterial(Object.assign({color,roughness:0.6,metalness:0.1},o||{}));}
+
+/* ---------- part info ---------- */
+const INFO={
+ cushion:{n:'Подушка из ПГС 1050 мм',docs:['DB-62289','DB-62290'],d:[['Материал','песчано-гравийная смесь'],['Уплотнение','Kупл ≥ 0,98, слоями'],['Под ней','известняк ИГЭ-2'],['Объём','вне поставки']],p:'Заменяет просадочную супесь ИГЭ-1. Расчёт сдвига учитывает её вес: 17 кН/м³ × 380 м² = 6460 кН.'},
+ slab:{n:'Фундаментная плита 24 × 15,8 × 0,2 м',docs:['DB-62290','DB-62291','CD-62223 §8'],d:[['Бетон','C30/37, сульфатостойкий'],['Арматура','Ø12 A500 шаг 200, 2 сетки'],['Под плитой','плёнка ПВД 200 мкм'],['Верх','±0,000 = 193,75 абс.']],p:'Плита служит и фундаментом, и полом склада. Осадка по расчёту 4 мм при допустимых 120 мм.',flag:'Альбом АС рев. 02 вместо плиты показывает 14 столбчатых фундаментов Стф1 с рандбалками. Нужно уточнить, какой альбом действующий.'},
+ embeds:{n:'Закладные детали М-1',docs:['DB-62290'],d:[['Шаг','2000 мм, крайние 1500'],['Количество','13 × 2 стороны'],['Назначение','крепление опорных уголков арок']],p:'Связывают арку с плитой. Узел опирания и есть стык между объёмом поставщика и фундаментом заказчика.'},
+ plinth:{n:'Ригель цоколя Рц-1',docs:['DD-62260 (нет в папке)','DD-62106'],d:[['Тип','стальной уголок по периметру'],['Крепление','к закладным, сварка/болты кл. В']],p:'Опорный уголок, к которому самонарезающими винтами крепятся нижние концы арочных панелей.',flag:'Лист DD-62260 указан в ведомости КМ, но в комплекте отсутствует.'},
+ arch:{n:'Арочные панели Л1',docs:['CD-62223 §5','DD-62106','GA-62104'],d:[['Профиль','C 305 × 114 мм'],['Радиус','7500 мм, верх +7,200'],['Панелей','≈ 76 на 23 м'],['Металл','оцинкованный лист, 11,4 т'],['Стыки','закатка + саморезы']],p:'Бескаркасная арочная оболочка: несущая способность берётся из самого профиля. Смещения по расчёту не больше 7,5 мм при допустимых 50 мм.',flag:'Расчёт считает толщину 1,8 мм, а чертежи КМ дают лист 1,2 мм. Это прямо влияет на массу и цену.'},
+ frame:{n:'Каркас торцов: стойки Ст1, балки Б1',docs:['DD-62106','DD-62269','GA-62104'],d:[['Сечение','гнутая труба □100×5'],['Сталь','С245 по ГОСТ 27772-2015'],['Масса','0,77 т']],p:'Обрамляют проёмы ворот, окон и двери и держат торцевую обшивку. Балки стоят на +4,600 и +5,700.'},
+ endwalls:{n:'Торцевая обшивка Л2',docs:['DD-62106','DD-62269'],d:[['Панели','прямые, лист 1,2 мм'],['Профиль','305 × 114'],['Утепление','нет']],p:'Те же панели, что и в арке, только прямые. Крепятся к ригелю цоколя и стойкам.'},
+ gate:{n:'Ворота ВР1 3800 × 4600',docs:['DD-62097','DD-62096'],d:[['Тип','распашные, ГОСТ 31174'],['Калитка','ДСН 2060 × 960'],['Площадь','17,48 м²'],['Где','ось 1, между Б и В']],p:'Въезд для погрузчика FL3 через пандус с уклоном 10 %. Нажмите «Открыть ворота».',flag:'На плане ЭО 63277 ворота показаны на обоих торцах.'},
+ door:{n:'Дверь Д1 2060 × 860',docs:['DD-62097'],d:[['Тип','стальная наружная ДСН'],['Где','ось 5, у оси Г'],['Перед ней','крыльцо Кр-1 1200 × 1300']],p:'Эвакуационный и служебный вход.'},
+ windows:{n:'Окна Ок1 3800 × 1000',docs:['DD-62097'],d:[['Кол-во','2 шт, по одному на торец'],['Отметка','+4,700 … +5,700'],['Тип','ОА СПО, ГОСТ 21519']],p:'Верхний свет над воротами, единственное естественное освещение.'},
+ ramp:{n:'Пандус Пн1, уклон 10 %',docs:['DB-62292','GA-62186'],d:[['Размер','4,9 × 5,0 м'],['Бетон','C30/37, 200–250 мм'],['Перепад','−0,300 → ±0,000']],p:'Въезд к воротам ВР1. Вне объёма поставщика здания.'},
+ porch:{n:'Крыльцо Кр-1',docs:['DB-62292','GA-62186'],d:[['Размер','1200 × 1300'],['Отметка','−0,030']],p:'Площадка перед дверью Д1.'},
+ blind:{n:'Отмостка 1000 мм',docs:['DB-62290'],d:[['Бетон','C12/15, 100–120 мм'],['Утеплитель','ТехноПЛЕКС 50 мм'],['Уклон','2 % от здания']],p:'Отводит воду от плиты.'},
+ lights:{n:'Освещение',docs:['DD-63277','FB-63276','RB-63275'],d:[['Рабочие','8 × ARCTIC.OPL ECO LED 60 Вт, IP65'],['Подвес','на тросах, +5,0 м'],['Аварийные','18 Вт, IP65, +2,5 м у ворот'],['Мощность','Pр = 2,17 кВт, 380/220 В']],p:'Кабели ВВГнг(А)-LS для рабочего света и ВВГнг(А)-FRLS для аварийного, щит у ворот.'},
+ vents:{n:'Дефлекторы Turbovent ТА-400',docs:['RB-66028','DD-66029','GA-66030'],d:[['Кол-во','4 шт, ВЕ1–ВЕ4'],['Диаметр','Ø400'],['Отопление','нет, склад неотапливаемый']],p:'Естественная вентиляция роторными турбинами на кровле. Нужны проходки в арке с уплотнением.'},
+ ground:{n:'Контур заземления',docs:['DD-63277'],d:[['Форма','треугольник, стороны 3 м'],['Где','у оси 1, со стороны Г']],p:'Заземление щита и металлоконструкций здания.'},
+ cctv:{n:'Видеонаблюдение и пожарная сигнализация',docs:['DD-66580','DD-65154','DD-65155','DD-65193'],d:[['Камеры','CAM 40, 41, 42, 4 Мп'],['Шкаф','ВН №13, 9U'],['ППК','Р3-Рубеж-2ОП в термошкафу NSGate'],['СОУЭ','громкоговорители ARS']],p:'Оборудование ставят смежники, поставщику нужно учесть крепления и кабель-каналы.'},
+ zones:{n:'Зоны складирования',docs:['DD-66580','CD-62223 §6.2'],d:[['Нагрузка','5 кН/м²'],['Катушки СН','2 × 1,9 т'],['Погрузчик','FL3, 31,5 кН/колесо']],p:'Сторона А: кабели DC, НН, СН, жидкости. Сторона Г: запчасти подстанции, RMU, солнечные модули LONGi. Вдоль торцов стеллажи.'}
+};
+
+/* ---------- registry ---------- */
+const items=[]; const partMeshes={}; const layers={};
+const LAYERS=[
+ ['base','Основание',  '#c7a26a'],
+ ['frame','Каркас',    '#9fb4c6'],
+ ['arch','Арка',       '#d6e2ec'],
+ ['walls','Торцы и проёмы','#f2a33a'],
+ ['mep','Инженерия',   '#5cc18b'],
+ ['store','Склад',     '#c7a6ff']
+];
+LAYERS.forEach(l=>layers[l[0]]=true);
+function reg(obj,o){
+  const it={obj,part:o.part,layer:o.layer,base:obj.position.clone(),ex:o.ex||new V3(),drop:o.drop||new V3(0,8,0),start:o.start||0,dur:o.dur||0.7,scaleIn:!!o.scaleIn};
+  obj.traverse(m=>{if(m.isMesh){m.userData.part=o.part;m.castShadow=o.noShadow?false:true;m.receiveShadow=true;(partMeshes[o.part]=partMeshes[o.part]||[]).push(m);}});
+  root.add(obj);items.push(it);return it;
+}
+function box(w,h,d,m,x,y,z){const g=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);g.position.set(x,y,z);return g;}
+
+/* ---------- ground + pit ---------- */
+{
+ const s=new THREE.Shape();s.moveTo(-70,-70);s.lineTo(90,-70);s.lineTo(90,90);s.lineTo(-70,90);s.lineTo(-70,-70);
+ const h=new THREE.Path();h.moveTo(-1.6,-1.7);h.lineTo(24.6,-1.7);h.lineTo(24.6,16.7);h.lineTo(-1.6,16.7);h.lineTo(-1.6,-1.7);s.holes.push(h);
+ const g=new THREE.Mesh(new THREE.ShapeGeometry(s),mat(0x2a2620,{roughness:1,side:THREE.DoubleSide}));
+ g.rotation.x=Math.PI/2;g.position.y=-0.3;g.receiveShadow=true;
+ scene.add(g);
+ const grid=new THREE.GridHelper(160,80,0x3a4a5a,0x222d38);grid.position.set(11.5,-0.295,7.5);grid.material.opacity=0.35;grid.material.transparent=true;scene.add(grid);
+ const pitM=mat(0x3b3227,{roughness:1,side:THREE.BackSide});
+ const pit=new THREE.Mesh(new THREE.BoxGeometry(26.2,1.0,18.4),pitM);pit.position.set(11.5,-0.8,7.5);pit.receiveShadow=true;scene.add(pit);
+}
+
+/* ---------- base layer ---------- */
+const mSand=mat(0xb8955c,{roughness:0.95});
+const mConc=mat(0x9aa2a8,{roughness:0.85});
+const mConc2=mat(0x80878d,{roughness:0.9});
+const mEmb=mat(0xd0d8de,{metalness:0.6,roughness:0.35});
+reg(box(25.4,1.05,17.2,mSand,11.5,-0.725,7.5),{part:'cushion',layer:'base',ex:new V3(0,-5.5,0),start:0});
+reg(box(24,0.2,15.8,mConc,11.5,-0.1,7.5),{part:'slab',layer:'base',ex:new V3(0,-3,0),start:0.6});
+{
+ const g=new THREE.Group();const gm=new THREE.BoxGeometry(0.26,0.03,0.26);
+ const xs=[0];for(let x=1.5;x<=21.6;x+=2)xs.push(x);xs.push(23);
+ xs.forEach(x=>{[0.12,14.88].forEach(z=>{const m=new THREE.Mesh(gm,mEmb);m.position.set(x,0.012,z);g.add(m);});});
+ reg(g,{part:'embeds',layer:'base',ex:new V3(0,-1.6,0),start:1.2,dur:0.5});
+}
+{ // blind area
+ const g=new THREE.Group();
+ [[11.5,-0.85,26,1],[11.5,15.85,26,1]].forEach(a=>g.add(box(a[2],0.12,a[3],mConc2,a[0],-0.24,a[1])));
+ [[-0.6,7.5,1,15.8],[23.6,7.5,1,15.8]].forEach(a=>g.add(box(a[2],0.12,a[3],mConc2,a[0],-0.24,a[1])));
+ reg(g,{part:'blind',layer:'base',ex:new V3(0,-2.4,0),start:1.0,dur:0.5});
+}
+{ // ramp
+ const s=new THREE.Shape();s.moveTo(-5.4,-0.3);s.lineTo(-2.0,0);s.lineTo(-0.6,0);s.lineTo(-0.6,-0.55);s.lineTo(-5.4,-0.55);s.lineTo(-5.4,-0.3);
+ const g=new THREE.Mesh(new THREE.ExtrudeGeometry(s,{depth:4.9,bevelEnabled:false}),mConc);g.position.z=5.05;
+ const grp=new THREE.Group();grp.add(g);
+ reg(grp,{part:'ramp',layer:'base',ex:new V3(-4,-1.5,0),start:1.4,dur:0.6});
+}
+reg(box(1.3,0.3,1.2,mConc,23.75,-0.18,13.55),{part:'porch',layer:'base',ex:new V3(3,-1.5,0),start:1.4,dur:0.6});
+
+/* ---------- arch ---------- */
+const mArch=mat(0xc9d4dc,{metalness:0.75,roughness:0.32,side:THREE.DoubleSide,clippingPlanes:[cut]});
+function panelGeo(){
+ const P=[[0.03,-0.114],[0,-0.114],[0,0],[0.305,0],[0.305,-0.114],[0.275,-0.114]];
+ const N=72;const pos=[];const idx=[];
+ for(let k=0;k<=N;k++){
+   const th=TH0+(Math.PI-2*TH0)*k/N;
+   for(let j=0;j<P.length;j++){const r=R+P[j][1];pos.push(P[j][0],CY+r*Math.sin(th),CZ+r*Math.cos(th));}
+ }
+ const C=P.length;
+ for(let k=0;k<N;k++)for(let j=0;j<C-1;j++){const a=k*C+j,b=a+1,c=a+C,d=c+1;idx.push(a,c,b,b,c,d);}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();return g;
+}
+const pg=panelGeo();
+const NP=76, X0=-0.09;
+for(let i=0;i<NP;i++){
+ const m=new THREE.Mesh(pg,mArch);m.position.x=X0+i*0.305;
+ const g=new THREE.Group();g.add(m);
+ const spread=(i-(NP-1)/2)*0.045;
+ reg(g,{part:'arch',layer:'arch',ex:new V3(spread,5.5,0),drop:new V3(0,10,0),start:3.0+i*0.045,dur:0.55});
+}
+
+/* ---------- frame (plinth + end frames) ---------- */
+const mFrame=mat(0x6f8597,{metalness:0.55,roughness:0.4,clippingPlanes:[cut]});
+const mPlinth=mat(0x8b9daa,{metalness:0.55,roughness:0.4});
+{
+ const g=new THREE.Group();
+ g.add(box(23.1,0.12,0.06,mPlinth,11.5,0.06,0.05));
+ g.add(box(23.1,0.12,0.06,mPlinth,11.5,0.06,14.95));
+ g.add(box(0.06,0.12,15,mPlinth,0,0.06,7.5));
+ g.add(box(0.06,0.12,15,mPlinth,23,0.06,7.5));
+ reg(g,{part:'plinth',layer:'frame',ex:new V3(0,-0.8,0),start:1.6,dur:0.5});
+}
+function yArch(z){return CY+Math.sqrt(R*R-(z-CZ)*(z-CZ));}
+function endFrame(x,posts,beams){
+ const g=new THREE.Group();
+ posts.forEach(z=>{const h=yArch(z)-0.12;g.add(box(0.1,h,0.1,mFrame,x,h/2,z));});
+ beams.forEach(b=>g.add(box(0.1,0.1,b[1]-b[0],mFrame,x,b[2],(b[0]+b[1])/2)));
+ return g;
+}
+reg(endFrame(0.06,[5.6,9.4],[[5.6,9.4,4.6],[5.6,9.4,5.7]]),{part:'frame',layer:'frame',ex:new V3(-6,0,0),start:2.0,dur:0.6});
+reg(endFrame(22.94,[5.6,9.4,13.1,14.0],[[5.6,9.4,4.6],[5.6,9.4,5.7],[13.1,14.0,2.1]]),{part:'frame',layer:'frame',ex:new V3(6,0,0),start:2.3,dur:0.6});
+
+/* ---------- end walls ---------- */
+function corrTex(){
+ const c=document.createElement('canvas');c.width=128;c.height=8;const x=c.getContext('2d');
+ const gr=x.createLinearGradient(0,0,128,0);
+ gr.addColorStop(0,'#7f8e99');gr.addColorStop(0.08,'#c6d1d9');gr.addColorStop(0.5,'#b4c0c9');gr.addColorStop(0.92,'#c6d1d9');gr.addColorStop(1,'#6f7d88');
+ x.fillStyle=gr;x.fillRect(0,0,128,8);
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1/0.305,1);t.encoding=THREE.sRGBEncoding;return t;
+}
+const mWall=mat(0xffffff,{map:corrTex(),metalness:0.55,roughness:0.42,side:THREE.DoubleSide,clippingPlanes:[cut]});
+function endWallShape(holes){
+ const s=new THREE.Shape();
+ const z1=CZ+Math.sqrt(R*R-CY*CY);
+ s.moveTo(z1,0);s.absarc(CZ,CY,R-0.06,TH0+0.002,Math.PI-TH0-0.002,false);s.lineTo(CZ+(CZ-z1),0);s.lineTo(z1,0);
+ holes.forEach(h=>{const p=new THREE.Path();p.moveTo(h[0],h[2]);p.lineTo(h[1],h[2]);p.lineTo(h[1],h[3]);p.lineTo(h[0],h[3]);p.lineTo(h[0],h[2]);s.holes.push(p);});
+ return new THREE.ShapeGeometry(s,48);
+}
+{
+ const w1=new THREE.Mesh(endWallShape([[5.6,9.4,0,4.6],[5.6,9.4,4.7,5.7]]),mWall);w1.rotation.y=-Math.PI/2;w1.position.x=0;
+ const g1=new THREE.Group();g1.add(w1);
+ reg(g1,{part:'endwalls',layer:'walls',ex:new V3(-10,0,0),start:6.6,dur:0.7});
+ const w5=new THREE.Mesh(endWallShape([[13.1,14.0,0,2.1],[5.6,9.4,4.7,5.7]]),mWall);w5.rotation.y=-Math.PI/2;w5.position.x=23;
+ const g5=new THREE.Group();g5.add(w5);
+ reg(g5,{part:'endwalls',layer:'walls',ex:new V3(10,0,0),start:6.9,dur:0.7});
+}
+/* gates */
+const mGate=mat(0xe39a36,{metalness:0.4,roughness:0.45,clippingPlanes:[cut]});
+const mGlass=mat(0x8fc3ff,{metalness:0.1,roughness:0.1,transparent:true,opacity:0.45,clippingPlanes:[cut]});
+const leaves=[];
+{
+ const g=new THREE.Group();
+ [[5.6,1],[9.4,-1]].forEach(([hz,dir])=>{
+   const pivot=new THREE.Group();pivot.position.set(-0.03,0,hz);
+   const leaf=box(0.06,4.55,1.88,mGate,0,2.28,dir*0.95);
+   for(let k=1;k<4;k++)pivot.add(box(0.08,0.06,1.8,mFrame,0,k*1.14,dir*0.95));
+   pivot.add(leaf);
+   if(dir===1){pivot.add(box(0.08,2.06,0.96,mat(0xc77f22,{clippingPlanes:[cut]}),-0.01,1.04,dir*0.95));}
+   pivot.userData.dir=dir;leaves.push(pivot);g.add(pivot);
+ });
+ reg(g,{part:'gate',layer:'walls',ex:new V3(-13,0,0),start:7.4,dur:0.6});
+}
+{
+ const g=new THREE.Group();g.add(box(0.06,2.06,0.86,mGate,23.03,1.03,13.55));
+ g.add(box(0.07,0.04,0.12,mat(0x222222),23.08,1.0,13.2));
+ reg(g,{part:'door',layer:'walls',ex:new V3(13,0,0),start:7.6,dur:0.5});
+}
+{
+ const g=new THREE.Group();
+ [0.0,23.0].forEach(x=>{g.add(box(0.04,1.0,3.8,mGlass,x,5.2,7.5));g.add(box(0.06,1.0,0.06,mFrame,x,5.2,6.23));g.add(box(0.06,1.0,0.06,mFrame,x,5.2,8.77));});
+ reg(g,{part:'windows',layer:'walls',ex:new V3(0,3,0),start:7.8,dur:0.5});
+}
+
+/* ---------- MEP ---------- */
+const mLight=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xfff3c4,emissiveIntensity:1.4});
+const mWire=new THREE.LineBasicMaterial({color:0x5c6e7d});
+{
+ const g=new THREE.Group();
+ [3.4,9.0,14.5,20.0].forEach(x=>[4.4,10.6].forEach(z=>{
+   g.add(box(1.5,0.07,0.16,mLight,x,5.0,z));
+   const top=yArch(z)-0.12;
+   const geo=new THREE.BufferGeometry().setFromPoints([new V3(x-0.6,5.04,z),new V3(x-0.6,top,z),new V3(x+0.6,5.04,z),new V3(x+0.6,top,z)]);
+   g.add(new THREE.LineSegments(geo,mWire));
+ }));
+ const mEm=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xff5a4a,emissiveIntensity:1.2});
+ [[0.12,5.2],[0.12,9.8],[22.88,12.9]].forEach(p=>g.add(box(0.06,0.18,0.3,mEm,p[0],2.5,p[1])));
+ g.add(box(0.2,0.6,0.5,mat(0xdfe5ea),0.15,1.6,4.8)); // ЩР
+ reg(g,{part:'lights',layer:'mep',ex:new V3(0,2.2,0),start:8.2,dur:0.6,noShadow:true});
+}
+const turbines=[];
+{
+ const g=new THREE.Group();const mt=mat(0xd9e1e7,{metalness:0.85,roughness:0.25});
+ [2.5,8.0,14.0,19.5].forEach(x=>{
+   const z=8.4, y=yArch(z);
+   const t=new THREE.Group();t.position.set(x,y,z);
+   t.add(new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.5,20),mt)).position.y=0.2;
+   const head=new THREE.Mesh(new THREE.SphereGeometry(0.3,14,8,0,Math.PI*2,0,Math.PI*0.62),mt);head.position.y=0.55;head.scale.y=1.25;
+   const rib=new THREE.Mesh(new THREE.SphereGeometry(0.305,14,8,0,Math.PI*2,0,Math.PI*0.62),new THREE.MeshStandardMaterial({color:0x5a6b78,wireframe:true}));rib.position.y=0.55;rib.scale.y=1.25;
+   const spin=new THREE.Group();spin.add(head);spin.add(rib);t.add(spin);turbines.push(spin);g.add(t);
+ });
+ reg(g,{part:'vents',layer:'mep',ex:new V3(0,8,0),start:8.6,dur:0.6});
+}
+{
+ const g=new THREE.Group();const mG=new THREE.LineBasicMaterial({color:0x5cc18b});
+ const p=[new V3(-4.6,-0.27,10.6),new V3(-1.6,-0.27,10.6),new V3(-3.1,-0.27,13.2)];
+ g.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(p),mG));
+ p.forEach(v=>{const r=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.5,8),mat(0x5cc18b));r.position.copy(v).add(new V3(0,0.15,0));g.add(r);});
+ g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([p[1],new V3(-0.6,-0.27,10.6),new V3(-0.6,-0.27,7.6),new V3(0,0.05,6.0)]),mG));
+ reg(g,{part:'ground',layer:'mep',ex:new V3(-3,0,0),start:8.4,dur:0.5});
+}
+{
+ const g=new THREE.Group();const mc=mat(0xf4f6f8,{roughness:0.3});
+ function cam(x,y,z,ry){const c=new THREE.Group();c.position.set(x,y,z);c.rotation.y=ry;const b=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.32,14),mc);b.rotation.z=Math.PI/2;b.position.x=0.12;c.add(b);c.add(box(0.06,0.06,0.06,mc,0,0,0));g.add(c);}
+ cam(0.2,4.0,14.0,-0.6);cam(23.35,3.0,15.2,2.3);cam(22.7,4.0,13.6,2.6);
+ g.add(box(0.21,0.6,0.6,mat(0xc0392b),22.85,1.6,14.6));
+ g.add(box(0.2,0.6,0.6,mat(0x3e4a56),22.85,2.4,14.6));
+ reg(g,{part:'cctv',layer:'mep',ex:new V3(3,1.5,0),start:8.8,dur:0.5});
+}
+
+/* ---------- storage ---------- */
+{
+ const g=new THREE.Group();
+ const zoneM=c=>new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:0.32,roughness:1,depthWrite:false});
+ const zones=[[1.6,5.6,0.7,4.4,0x5aa0e0],[6.6,10.6,0.7,4.4,0x7cc6a4],[11.6,15.6,0.7,4.4,0xe0a05a],[16.6,20.6,0.7,4.4,0xc77ad6],
+              [1.6,8.6,10.6,14.3,0x9fb4c6],[9.1,13.4,10.6,14.3,0x9fb4c6],[13.6,16.0,10.6,14.3,0xe6d36a]];
+ zones.forEach(z=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(z[1]-z[0],z[3]-z[2]),zoneM(z[4]));m.rotation.x=-Math.PI/2;m.position.set((z[0]+z[1])/2,0.012,(z[2]+z[3])/2);m.receiveShadow=true;g.add(m);});
+ const mDrum=mat(0x8a5a2e,{roughness:0.8}), mCable=mat(0x1f2328,{roughness:0.7});
+ function drum(x,z,D,W){const d=new THREE.Group();const a=new THREE.Mesh(new THREE.CylinderGeometry(D/2,D/2,0.06,28),mDrum);a.rotation.x=Math.PI/2;
+   const b=a.clone();a.position.z=-W/2;b.position.z=W/2;const c=new THREE.Mesh(new THREE.CylinderGeometry(D*0.36,D*0.36,W,24),mCable);c.rotation.x=Math.PI/2;d.add(a,b,c);d.position.set(x,D/2,z);d.rotation.y=Math.PI/2;g.add(d);}
+ for(let i=0;i<4;i++)for(let j=0;j<3;j++)drum(2.2+i*0.95,1.4+j*1.05,0.7,0.45); // DC
+ drum(7.5,2.5,1.2,0.7);drum(9.3,2.5,1.2,0.7); // LV
+ drum(12.7,2.6,2.0,1.1);drum(14.6,2.6,2.0,1.1); // MV 1.9 t
+ const mBarrel=mat(0x2f6fb0,{metalness:0.4,roughness:0.5});
+ for(let i=0;i<4;i++)for(let j=0;j<3;j++){const b=new THREE.Mesh(new THREE.CylinderGeometry(0.29,0.29,0.88,18),mBarrel);b.position.set(17.3+i*0.75,0.44,1.4+j*0.75);g.add(b);}
+ const mCrate=mat(0x9c7a4a,{roughness:0.9}), mRMU=mat(0x7d8e99,{metalness:0.4});
+ g.add(box(5.5,1.2,2.8,mCrate,5.1,0.6,12.4));
+ g.add(box(1.2,1.9,0.9,mRMU,10.3,0.95,11.4));g.add(box(1.2,1.9,0.9,mRMU,11.9,0.95,11.4));
+ [9.8,10.4,11.0].forEach(x=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.26,0.9,16),mRMU);c.position.set(x,0.45,13.4);g.add(c);});
+ const mPV=mat(0x1b2c4a,{metalness:0.3,roughness:0.3});
+ [14.1,14.85,15.6].forEach(x=>{g.add(box(0.6,1.25,2.3,mPV,x,0.62,12.4));});
+ const mRack=mat(0x3d6fa8,{metalness:0.5,roughness:0.4});
+ function rack(x,z0,z1){const r=new THREE.Group();const len=z1-z0;
+   [z0,z1,(z0+z1)/2].forEach(z=>[x-0.3,x+0.3].forEach(xx=>r.add(box(0.06,3.0,0.06,mRack,xx,1.5,z))));
+   [0.3,1.2,2.1,3.0].forEach(y=>r.add(box(0.66,0.04,len,mat(0xb07a3a),x,y,(z0+z1)/2)));g.add(r);}
+ rack(0.7,1.0,4.4);rack(0.7,10.6,13.9);rack(22.2,1.0,11.6);
+ reg(g,{part:'zones',layer:'store',ex:new V3(0,0,0),drop:new V3(0,4,0),start:9.2,dur:0.8,scaleIn:true});
+}
+
+/* ---------- loads (overlay) ---------- */
+const loads=new THREE.Group();loads.visible=false;scene.add(loads);
+{
+ function arrow(from,dir,len,color){const a=new THREE.ArrowHelper(dir.clone().normalize(),from,len,color,Math.min(0.45,len*0.35),0.22);loads.add(a);}
+ for(let x=1;x<=22;x+=3){
+   for(let th=Math.PI/3;th<=2*Math.PI/3+0.01;th+=Math.PI/12){const p=new V3(x,CY+R*Math.sin(th)+1.6,CZ+R*Math.cos(th));arrow(p,new V3(0,-1,0),1.4,0x9fd3ff);}
+   // wind from -z: pressure on windward lower zone A
+   for(let th=Math.PI*0.62;th<=Math.PI*0.97;th+=Math.PI*0.09){const n=new V3(0,Math.sin(th),Math.cos(th));const p=new V3(x,CY+R*Math.sin(th),CZ+R*Math.cos(th)).add(n.clone().multiplyScalar(2.0));arrow(p,n.clone().negate(),1.8,0xf2a33a);}
+   // suction zone B (top) and C (leeward)
+   for(let th=Math.PI*0.36;th<=Math.PI*0.6;th+=Math.PI*0.08){const n=new V3(0,Math.sin(th),Math.cos(th));const p=new V3(x,CY+R*Math.sin(th),CZ+R*Math.cos(th)).add(n.clone().multiplyScalar(0.15));arrow(p,n,1.9,0xef6b5b);}
+   for(let th=Math.PI*0.06;th<=Math.PI*0.3;th+=Math.PI*0.09){const n=new V3(0,Math.sin(th),Math.cos(th));const p=new V3(x,CY+R*Math.sin(th),CZ+R*Math.cos(th)).add(n.clone().multiplyScalar(0.15));arrow(p,n,1.0,0xef6b5b);}
+ }
+ [[12.7,2.6],[14.6,2.6]].forEach(p=>{arrow(new V3(p[0]-0.4,3.6,p[1]),new V3(0,-1,0),1.2,0xc7a6ff);arrow(new V3(p[0]+0.4,3.6,p[1]),new V3(0,-1,0),1.2,0xc7a6ff);});
+}
+
+/* ---------- labels ---------- */
+const labelsEl=document.getElementById('labels');const axLabels=[];
+[['1',0],['2',5.5],['3',11.5],['4',17.5],['5',23]].forEach(a=>axLabels.push({t:a[0],p:new V3(a[1],-0.3,-2.6)}));
+[['А',0],['Б',5.1],['В',9.9],['Г',15]].forEach(a=>axLabels.push({t:a[0],p:new V3(-2.7,-0.3,a[1])}));
+axLabels.forEach(a=>{const d=document.createElement('div');d.className='ax';d.textContent=a.t;labelsEl.appendChild(d);a.el=d;});
+{
+ const m=new THREE.LineDashedMaterial({color:0x4d6175,dashSize:0.5,gapSize:0.35});
+ [0,5.5,11.5,17.5,23].forEach(x=>{const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new V3(x,-0.29,-2.2),new V3(x,-0.29,17.2)]),m);l.computeLineDistances();scene.add(l);});
+ [0,5.1,9.9,15].forEach(z=>{const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new V3(-2.3,-0.29,z),new V3(25.3,-0.29,z)]),m);l.computeLineDistances();scene.add(l);});
+}
+
+/* ---------- UI: layers ---------- */
+const chips=document.getElementById('layerChips');
+LAYERS.forEach(l=>{const b=document.createElement('button');b.type='button';b.className='chip';b.setAttribute('aria-pressed','true');b.style.setProperty('--sw',l[2]);b.innerHTML='<span class="dot"></span>'+l[1];
+ b.addEventListener('click',()=>{layers[l[0]]=!layers[l[0]];b.setAttribute('aria-pressed',String(layers[l[0]]));});chips.appendChild(b);});
+
+/* ---------- info panel ---------- */
+const infoEl=document.getElementById('info');
+const ORDER=['cushion','slab','embeds','blind','ramp','porch','plinth','frame','arch','endwalls','gate','door','windows','lights','vents','ground','cctv','zones'];
+function showOverview(){
+ infoEl.innerHTML='<h3>Анатомия здания</h3><p>Кликните любой элемент модели или строку ниже. «Собрать по шагам» проигрывает последовательность монтажа, слайдер «Разборка» раздвигает слои, «Разрез вдоль» открывает интерьер.</p><div class="ttl" style="font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:14px">Элементы · '+ORDER.length+'</div><div class="partlist">'+ORDER.map(k=>'<button type="button" data-p="'+k+'">'+INFO[k].n+'<span>'+INFO[k].docs[0]+'</span></button>').join('')+'</div>';
+ infoEl.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>select(b.dataset.p)));
+}
+function showPart(k){
+ const i=INFO[k];
+ infoEl.innerHTML='<button class="btn" type="button" id="back" style="margin-bottom:12px">← Все элементы</button><h3>'+i.n+'</h3><div>'+i.docs.map(d=>'<span class="doc">'+d+'</span>').join('')+'</div><dl>'+i.d.map(r=>'<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>').join('')+'</dl><p>'+i.p+'</p>'+(i.flag?'<div class="flag">'+i.flag+'</div>':'');
+ document.getElementById('back').addEventListener('click',()=>select(null));
+}
+let selected=null;
+function setHi(k,on){(partMeshes[k]||[]).forEach(m=>{const ms=Array.isArray(m.material)?m.material:[m.material];ms.forEach(mm=>{if(!mm.emissive)return;if(on){if(mm.userData.e0===undefined){mm.userData.e0=mm.emissive.getHex();mm.userData.ei=mm.emissiveIntensity;}mm.emissive.setHex(0x8a4d0a);mm.emissiveIntensity=0.9;}else if(mm.userData.e0!==undefined){mm.emissive.setHex(mm.userData.e0);mm.emissiveIntensity=mm.userData.ei;}});});}
+function select(k){
+ if(selected)setHi(selected,false);
+ selected=k;
+ if(k){
+   // materials shared across parts: re-highlight only selected
+   setHi(k,true);showPart(k);
+ } else showOverview();
+}
+// give each part unique material clones so highlight does not leak
+(function uniq(){const seen=new Map();Object.keys(partMeshes).forEach(k=>{partMeshes[k].forEach(m=>{if(m.material&&m.material.emissive&&m.material!==mLight){const key=k+'|'+m.material.uuid;if(!seen.has(key)){const c=m.material.clone();if(m.material.clippingPlanes&&m.material.clippingPlanes.length)c.clippingPlanes=[cut];seen.set(key,c);}m.material=seen.get(key);}});});})();
+showOverview();
+
+/* ---------- picking ---------- */
+const ray=new THREE.Raycaster();const mouse=new THREE.Vector2();const tip=document.getElementById('tip');
+function pick(ev){
+ const r=canvas.getBoundingClientRect();mouse.x=((ev.clientX-r.left)/r.width)*2-1;mouse.y=-((ev.clientY-r.top)/r.height)*2+1;
+ ray.setFromCamera(mouse,camera);
+ const hits=ray.intersectObjects(root.children,true).filter(h=>{
+   let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}
+   if(cutOn&&h.point.z<cutZ&&['arch','endwalls','gate','windows','frame'].includes(h.object.userData.part))return false;
+   return h.object.userData.part;});
+ return hits.length?hits[0]:null;
+}
+let downPos=null;
+canvas.addEventListener('pointerdown',e=>{downPos=[e.clientX,e.clientY];});
+canvas.addEventListener('pointerup',e=>{if(!downPos)return;const dx=e.clientX-downPos[0],dy=e.clientY-downPos[1];downPos=null;if(dx*dx+dy*dy>25)return;const h=pick(e);select(h?h.object.userData.part:null);});
+canvas.addEventListener('pointermove',e=>{if(e.buttons)return;const h=pick(e);if(h){const r=stage.getBoundingClientRect();tip.style.display='block';tip.style.left=(e.clientX-r.left)+'px';tip.style.top=(e.clientY-r.top)+'px';tip.textContent=INFO[h.object.userData.part].n;canvas.style.cursor='pointer';}else{tip.style.display='none';canvas.style.cursor='grab';}});
+canvas.addEventListener('pointerleave',()=>{tip.style.display='none';});
+
+/* ---------- state & controls ---------- */
+let explode=0, explodeTarget=0, T=1e9, playing=false, gateOpen=0, gateTarget=0, autoRot=!reduceMotion, cutZ=-1, cutOn=false;
+const STEPS=[[0,'1 · Подушка ПГС 1050 мм'],[0.6,'2 · Плита 24 × 15,8 × 0,2 м'],[1.2,'3 · Закладные, отмостка, пандус'],[1.6,'4 · Ригель цоколя Рц-1'],[2.0,'5 · Каркас торцов Ст1, Б1'],[3.0,'6 · Арочные панели, 76 шт'],[6.6,'7 · Торцевая обшивка Л2'],[7.4,'8 · Ворота, дверь, окна'],[8.2,'9 · Свет, вентиляция, слаботочка'],[9.2,'10 · Склад заполнен']];
+const stepEl=document.getElementById('stepTitle');
+const sEx=document.getElementById('sExplode'),oEx=document.getElementById('oExplode');
+const sCut=document.getElementById('sCut'),oCut=document.getElementById('oCut');
+sEx.addEventListener('input',()=>{explodeTarget=sEx.value/100;oEx.textContent=sEx.value+' %';bEx.classList.toggle('on',explodeTarget>0);bEx.textContent=explodeTarget>0?'Собрать':'Разобрать';});
+sCut.addEventListener('input',()=>{const v=sCut.value/100;cutOn=v>0;cutZ=v*7.6;cut.constant=cutOn?-cutZ:100;oCut.textContent=cutOn?cutZ.toFixed(1).replace('.',',')+' м':'нет';});
+const bEx=document.getElementById('bExplode');
+bEx.addEventListener('click',()=>{explodeTarget=explodeTarget>0?0:1;sEx.value=explodeTarget*100;oEx.textContent=sEx.value+' %';bEx.classList.toggle('on',explodeTarget>0);bEx.textContent=explodeTarget>0?'Собрать':'Разобрать';});
+document.getElementById('bAssemble').addEventListener('click',()=>{explodeTarget=0;sEx.value=0;oEx.textContent='0 %';bEx.classList.remove('on');bEx.textContent='Разобрать';T=reduceMotion?1e9:-0.3;playing=!reduceMotion;if(!reduceMotion)fly('iso');});
+const bGate=document.getElementById('bGate');
+bGate.addEventListener('click',()=>{gateTarget=gateTarget?0:1;bGate.classList.toggle('on',!!gateTarget);bGate.textContent=gateTarget?'Закрыть ворота':'Открыть ворота';});
+const bLoads=document.getElementById('bLoads');const legend=document.getElementById('loadLegend');
+bLoads.addEventListener('click',()=>{loads.visible=!loads.visible;bLoads.classList.toggle('on',loads.visible);legend.style.display=loads.visible?'block':'none';});
+const bRot=document.getElementById('bRotate');bRot.classList.toggle('on',autoRot);
+bRot.addEventListener('click',()=>{autoRot=!autoRot;bRot.classList.toggle('on',autoRot);});
+controls.addEventListener('start',()=>{if(autoRot){autoRot=false;bRot.classList.remove('on');}});
+
+const VIEWS={
+ iso:{p:[-21,18,-19],t:[11.5,1.6,7.5]},
+ front:{p:[-24,3.6,7.5],t:[6,3.2,7.5]},
+ top:{p:[11.5,42,7.6],t:[11.5,0,7.5]},
+ inside:{p:[20.5,2.0,7.5],t:[2,3.2,7.5]}
+};
+let flyT=1,fromP=new V3(),fromT=new V3(),toP=new V3(),toT=new V3();
+function fly(name){const v=VIEWS[name];fromP.copy(camera.position);fromT.copy(controls.target);toP.set(...v.p);toT.set(...v.t);flyT=reduceMotion?0.999:0;}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>fly(b.dataset.view)));
+camera.position.set(...VIEWS.iso.p);controls.target.set(...VIEWS.iso.t);
+
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(stage);resize();
+
+const ease=t=>t<0?0:t>1?1:1-Math.pow(1-t,3);
+const clock=new THREE.Clock();const tmp=new V3();
+function loop(){
+ const dt=Math.min(clock.getDelta(),0.05);
+ if(playing){T+=dt;const end=STEPS[STEPS.length-1][0]+1.6;
+   let cur='';STEPS.forEach(s=>{if(T>=s[0])cur=s[1];});stepEl.textContent=cur;stepEl.style.display=cur?'block':'none';
+   if(T>end){playing=false;T=1e9;stepEl.style.display='none';}}
+ explode+=(explodeTarget-explode)*Math.min(1,dt*4);
+ gateOpen+=(gateTarget-gateOpen)*Math.min(1,dt*3);
+ leaves.forEach(p=>{p.rotation.y=-p.userData.dir*gateOpen*Math.PI*0.55;});
+ const ex=ease(explode);
+ for(const it of items){
+   const p=ease((T-it.start)/it.dur);
+   it.obj.visible=layers[it.layer]&&p>0;
+   if(!it.obj.visible)continue;
+   tmp.copy(it.base).addScaledVector(it.drop,1-p).addScaledVector(it.ex,ex);
+   it.obj.position.copy(tmp);
+   if(it.scaleIn){const s=Math.max(0.001,p);it.obj.scale.set(1,s,1);}
+ }
+ if(!reduceMotion)turbines.forEach((t,i)=>t.rotation.y+=dt*(2.2+i*0.3));
+ if(flyT<1){flyT=Math.min(1,flyT+dt/1.1);const k=ease(flyT);camera.position.lerpVectors(fromP,toP,k);controls.target.lerpVectors(fromT,toT,k);}
+ if(autoRot){const o=controls.target;const v=camera.position.clone().sub(o);v.applyAxisAngle(new V3(0,1,0),dt*0.12);camera.position.copy(o).add(v);}
+ controls.update();
+ renderer.render(scene,camera);
+ const w=stage.clientWidth,h=stage.clientHeight;
+ axLabels.forEach(a=>{tmp.copy(a.p).project(camera);const vis=tmp.z<1&&Math.abs(tmp.x)<1.05&&Math.abs(tmp.y)<1.05;a.el.style.display=vis?'grid':'none';if(vis){a.el.style.left=((tmp.x+1)/2*w)+'px';a.el.style.top=((1-tmp.y)/2*h)+'px';}});
+ requestAnimationFrame(loop);
+}
+loop();
+})();
+</script>
+<script>
+/* ================= ADDED: lifecycle theatre, gantt, estimate ================= */
+(function(){
+"use strict";
+const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fmt=new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0});
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+/* ================= GANTT ================= */
+(function(){
+ const G=[
+  ['Расчёт, КМ, КМД, разделы по MR, согласование с KCOI','d',0,3],
+  ['Закупка рулона, трубы, уголка и покупных изделий','f',1,3],
+  ['Резка, сборка и сварка каркаса торцов и Рц-1','f',3,2],
+  ['Горячее цинкование, контроль толщины покрытия','f',4.5,1.5],
+  ['Ворота, дверь, окна, дефлекторы','f',2,4],
+  ['ОТК, упаковка, маркировка, паспорта','f',5.4,0.6],
+  ['Доставка DDP Жанаозен, разгрузка, акт приёмки материалов','l',6,1],
+  ['Мобилизация, приёмка плиты, разбивка осей, Рц-1','s',7,0.6],
+  ['Прокатка и гибка панелей Л1 и Л2 мобильной линией','s',7.4,0.7],
+  ['Сборка секций на земле, подъём краном, замыкание оболочки','s',8,1.1],
+  ['Каркас и обшивка торцов, ворота, окна, дефлекторы','s',9,1.2],
+  ['Электромонтаж, освещение, заземление, замеры ЭТЛ','s',9.8,0.9],
+  ['Исполнительная документация, комиссия, акт приёмки','d',10.4,0.6]
+ ];
+ const t=document.getElementById('ganttT');if(!t)return;
+ let h='<thead><tr><th>Работа</th><th class="w"><div class="whead">';
+ for(let w=1;w<=12;w++)h+='<span>Н'+w+'</span>';
+ h+='</div></th></tr></thead><tbody>';
+ G.forEach(r=>{h+='<tr><td>'+r[0]+'</td><td class="g"><div class="wk">'+'<span></span>'.repeat(12)+'</div><div class="b '+r[1]+'" style="left:'+(r[2]/12*100)+'%;width:'+(r[3]/12*100)+'%"></div></td></tr>';});
+ t.innerHTML=h+'</tbody>';
+})();
+
+/* ================= ESTIMATE ================= */
+(function(){
+ const body=document.getElementById('estBody');if(!body)return;
+ const $=id=>document.getElementById(id);
+ const st={thk:1.2,gates:1,mont:1,eo:1,imp:0};
+ const steel=()=>st.thk===1.8?17.1:11.4;
+ const ROWS=[
+  ['g','Проектирование'],
+  ['r','Проверочный расчёт оболочки и каркаса: снег, ветер, сейсмика, R15','компл.',1,1400000],
+  ['r','Чертежи КМ и КМД, ведомость металла, карты раскроя и гибки','компл.',1,1600000],
+  ['r','Разделы АР, ОВ, ЭО, ВК и ВПВ по MR','компл.',1,2200000],
+  ['r','ППР на монтаж, схемы строповки секций, технологические карты','компл.',1,600000,'mont'],
+  ['g','Материалы'],
+  ['r',()=>'Рулон оцинкованный '+(st.thk===1.8?'1,8':'1,2')+' мм, Z275, ширина 610 мм (Л1 + Л2)','т',steel,720000],
+  ['r','Труба □100×5, С245 (стойки Ст1, балки Б1)','т',0.77,610000],
+  ['r','Уголок ригеля цоколя Рц-1 (оценка, листа DD-62260 нет)','т',0.93,560000],
+  ['r','Крепёж: винты с ЭПДМ-шайбой, болты кл. B, анкеры','компл.',1,650000],
+  ['r','Нащельники, отливы, герметики, уплотнители','компл.',1,420000],
+  ['g','Изготовление'],
+  ['r','Резка, сборка, сварка каркаса торцов и Рц-1','т',1.7,380000],
+  ['r','Горячее цинкование каркаса по ГОСТ 9.307-89','т',1.7,260000],
+  ['r','Прокатка и гибка панелей мобильной линией (линия, оператор, наладка)','т',steel,190000],
+  ['r','ОТК, упаковка, маркировка, паспорта качества','компл.',1,380000],
+  ['g','Проёмы и оборудование'],
+  ['r','Ворота ВР1 3800 × 4600 с калиткой','шт',()=>st.gates,1850000],
+  ['r','Дверь Д1 ДСН 2060 × 860','шт',1,210000],
+  ['r','Окно Ок1 3800 × 1000, алюминий','шт',2,320000],
+  ['r','Дефлектор Turbovent ТА-400 с проходкой','шт',4,68000],
+  ['r','Светильник LED 60 Вт IP65','шт',8,95000,'eo'],
+  ['r','Аварийный светильник 18 Вт IP65','шт',3,35000,'eo'],
+  ['r','Щит ЩР с автоматикой','шт',1,260000,'eo'],
+  ['r','Кабель ВВГнг(А)-LS и FRLS, трос подвеса, лотки','компл.',1,480000,'eo'],
+  ['r','Контур заземления: полоса, электроды','компл.',1,190000,'eo'],
+  ['g','Логистика DDP Жанаозен'],
+  ['r','Фура 20 т: рулоны на ложементах','рейс',1,1400000],
+  ['r','Фура: каркас, ворота, окна, крепёж, дефлекторы','рейс',1,1400000],
+  ['r','Трал: мобильная линия туда и обратно','рейс',2,1100000],
+  ['r','Разгрузка краном или манипулятором','смена',2,180000],
+  ['r','Страхование груза','компл.',1,150000],
+  ['r','Таможенное оформление и пошлина (ввоз из третьих стран)','компл.',1,1800000,'imp'],
+  ['g','Монтаж (опция)'],
+  ['r','Бригада 6 человек × 18 рабочих дней','чел.-дн.',108,32000,'mont'],
+  ['r','Автокран 25 т','смена',6,210000,'mont'],
+  ['r','Ножничный или телескопический подъёмник','смена',10,95000,'mont'],
+  ['r','Дизель-генератор для линии и инструмента','смена',12,35000,'mont'],
+  ['r','Проживание и суточные бригады','чел.-дн.',120,18000,'mont'],
+  ['r','Мобилизация, демобилизация, бытовка','компл.',1,900000,'mont'],
+  ['r','Геодезия, ИТР, исполнительная документация','компл.',1,1100000,'mont'],
+  ['r','Монтаж электрооборудования, замеры ЭТЛ','компл.',1,650000,'mont+eo']
+ ];
+ const rows=[];let grp=-1;const groups=[];let n=0;
+ ROWS.forEach(r=>{
+  if(r[0]==='g'){grp++;groups.push(r[1]);const tr=document.createElement('tr');tr.className='grp';tr.innerHTML='<td colspan="6">'+(grp+1)+'. '+r[1]+'</td>';body.appendChild(tr);return;}
+  n++;const o={no:n,g:grp,name:r[1],unit:r[2],qf:typeof r[3]==='function'?r[3]:null,q:typeof r[3]==='function'?r[3]():r[3],p:r[4],cond:r[5]||''};
+  const tr=document.createElement('tr');
+  tr.innerHTML='<td class="num">'+n+'</td><td class="nm"></td><td>'+o.unit+'</td><td class="r"><input class="q" type="number" min="0" step="any" id="eq'+n+'" aria-label="Количество, строка '+n+'"></td><td class="r"><input type="number" min="0" step="1000" id="ep'+n+'" aria-label="Цена, строка '+n+'"></td><td class="r num sum"></td>';
+  o.tr=tr;o.qi=tr.querySelector('.q');o.pi=tr.querySelector('#ep'+n);o.nm=tr.querySelector('.nm');o.sum=tr.querySelector('.sum');
+  o.qi.value=o.q;o.pi.value=o.p;
+  o.qi.addEventListener('input',()=>{o.q=parseFloat(o.qi.value)||0;o.qf=null;calc();});
+  o.pi.addEventListener('input',()=>{o.p=parseFloat(o.pi.value)||0;calc();});
+  body.appendChild(tr);rows.push(o);
+ });
+ const tail=document.createElement('tbody');body.parentNode.appendChild(tail);
+ function on(o){if(!o.cond)return true;return o.cond.split('+').every(c=>st[c]===1);}
+ let lastText='';
+ function calc(){
+  const oh=(parseFloat($('eOh').value)||0)/100, rk=(parseFloat($('eRisk').value)||0)/100, vat=(parseFloat($('eVat').value)||0)/100;
+  let direct=0;const gs=groups.map(()=>0);const lines=[['№','Статья','Ед.','Кол-во','Цена без НДС','Сумма без НДС']];
+  rows.forEach(o=>{
+   if(o.qf){o.q=o.qf();o.qi.value=o.q;}
+   o.nm.textContent=typeof o.name==='function'?o.name():o.name;
+   const act=on(o);o.tr.classList.toggle('off',!act);
+   const s=act?o.q*o.p:0;o.sum.textContent=act?fmt.format(s):'не включено';
+   if(act){direct+=s;gs[o.g]+=s;lines.push([o.no,o.nm.textContent,o.unit,String(o.q).replace('.',','),o.p,Math.round(s)]);}
+  });
+  const ohS=direct*oh, rkS=(direct+ohS)*rk, net=direct+ohS+rkS, v=net*vat, gross=net+v;
+  const pct=x=>String(+(x*100).toFixed(1)).replace('.',',');
+  const T=[['Прямые затраты',direct],['Накладные расходы и прибыль, '+pct(oh)+' %',ohS],['Резерв на риски, '+pct(rk)+' %',rkS],['Итого без НДС',net],['НДС '+pct(vat)+' %',v],['Итого с НДС',gross]];
+  tail.innerHTML=T.map((t,i)=>'<tr class="'+(i===3||i===5?'sub':'')+'"><td></td><td colspan="4">'+t[0]+'</td><td class="r num">'+fmt.format(Math.round(t[1]))+'</td></tr>').join('');
+  T.forEach(t=>lines.push(['',t[0],'','','',Math.round(t[1])]));
+  $('tNet').textContent=fmt.format(Math.round(net))+' ₸';
+  $('tVat').textContent=fmt.format(Math.round(v))+' ₸';
+  $('tVatK').textContent='НДС '+pct(vat)+' %';$('vatTxt').textContent=pct(vat)+' %';
+  $('tGross').textContent=fmt.format(Math.round(gross))+' ₸';
+  $('tM2').textContent=fmt.format(Math.round(gross/345))+' ₸';
+  const bars=$('estBars');bars.innerHTML='';
+  groups.forEach((g,i)=>{const p=direct?gs[i]/direct:0;const d=document.createElement('div');d.className='bar';d.innerHTML='<div class="row"><span>'+g+'</span><span class="mono">'+fmt.format(Math.round(gs[i]))+' ₸ · '+(p*100).toFixed(1).replace('.',',')+' %</span></div><div class="track"><div class="fill" style="width:'+Math.max(p*100,0.4)+'%"></div></div>';bars.appendChild(d);});
+  lastText=lines.map(l=>l.join('\t')).join('\n');
+ }
+ [['eThk','thk',parseFloat],['eGates','gates',x=>+x],['eMont','mont',x=>+x],['eEO','eo',x=>+x],['eImp','imp',x=>+x]].forEach(([id,k,f])=>{$(id).addEventListener('change',()=>{st[k]=f($(id).value);calc();});});
+ ['eOh','eRisk','eVat'].forEach(id=>$(id).addEventListener('input',calc));
+ $('eImp').value='0';st.imp=0;
+ calc();
+ $('copyEst').addEventListener('click',()=>{const m=$('copyMsg');
+  const fb=()=>{const ta=document.createElement('textarea');ta.value=lastText;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}ta.remove();m.textContent=ok?'Скопировано, вставьте в Excel':'Не удалось скопировать, выделите таблицу вручную';};
+  try{navigator.clipboard.writeText(lastText).then(()=>{m.textContent='Скопировано, вставьте в Excel';},fb);}catch(e){fb();}
+ });
+})();
+
+/* ================= 3D LIFECYCLE ================= */
+if(typeof THREE==='undefined'){const i=document.getElementById('pInfo');if(i)i.innerHTML='<p>Не удалось загрузить three.js. Обновите страницу.</p>';return;}
+const V3=THREE.Vector3, Q=THREE.Quaternion;
+const host=document.getElementById('pStage'), canvas=document.getElementById('p3d');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x0b1219);scene.fog=new THREE.Fog(0x0b1219,90,230);
+const camera=new THREE.PerspectiveCamera(40,1,0.1,900);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true;controls.dampingFactor=0.08;controls.maxPolarAngle=Math.PI*0.495;controls.minDistance=2;controls.maxDistance=170;
+scene.add(new THREE.HemisphereLight(0xcfe3ff,0x3a3328,0.8));
+const sun=new THREE.DirectionalLight(0xfff1dc,1.1);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-42,right:42,top:42,bottom:-42,near:1,far:220});
+scene.add(sun);scene.add(sun.target);
+const fillL=new THREE.DirectionalLight(0x8fb5ff,0.35);fillL.position.set(60,30,60);scene.add(fillL);
+function setSun(t){sun.target.position.copy(t);sun.position.copy(t).add(new V3(-30,48,-22));}
+
+let seed=7;function rnd(){seed=(seed*16807)%2147483647;return (seed-1)/2147483646;}
+function mat(c,o){return new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:0.6,metalness:0.1},o||{}));}
+function sh(m){m.castShadow=true;m.receiveShadow=true;return m;}
+function box(w,h,d,m,x,y,z){const g=sh(new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m));g.position.set(x||0,y||0,z||0);return g;}
+function cyl(r1,r2,h,m,x,y,z,seg){const g=sh(new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||20),m));g.position.set(x||0,y||0,z||0);return g;}
+function line(pts,color,o){return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial(Object.assign({color},o||{})));}
+const clamp01=x=>x<0?0:x>1?1:x;
+const ease=t=>{t=clamp01(t);return 1-Math.pow(1-t,3);};
+const easeIO=t=>{t=clamp01(t);return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;};
+
+const M={
+ galv:mat(0xc9d4dc,{metalness:0.75,roughness:0.32,side:THREE.DoubleSide}),
+ tube:mat(0x6f8597,{metalness:0.55,roughness:0.4}),
+ dark:mat(0x2a3138,{roughness:0.7}),
+ steel:mat(0x4a5560,{metalness:0.5,roughness:0.5}),
+ conc:mat(0x7c848a,{roughness:0.9}),
+ conc2:mat(0x80878d,{roughness:0.9}),
+ orange:mat(0xe39a36,{metalness:0.3,roughness:0.5}),
+ yellow:mat(0xf2c94c,{metalness:0.3,roughness:0.5}),
+ wood:mat(0x9c7a4a,{roughness:0.9}),
+ blue:mat(0x3d6fa8,{metalness:0.4,roughness:0.45}),
+ white:mat(0xe8edf1,{roughness:0.5}),
+ glass:mat(0x8fc3ff,{metalness:0.1,roughness:0.1,transparent:true,opacity:0.45}),
+ rubber:mat(0x15181b,{roughness:0.9}),
+ red:mat(0xc0392b),
+ sand:mat(0x6b5a42,{roughness:1})
+};
+function human(vest){const g=new THREE.Group();const mP=mat(0x2b3440),mV=mat(vest||0xf2a33a),mS=mat(0xd9a77f),mH=mat(0xf4f6f8);
+ g.add(box(0.14,0.8,0.16,mP,-0.1,0.4,0),box(0.14,0.8,0.16,mP,0.1,0.4,0),box(0.44,0.62,0.26,mV,0,1.12,0),box(0.1,0.56,0.12,mV,-0.28,1.12,0),box(0.1,0.56,0.12,mV,0.28,1.12,0));
+ const h=sh(new THREE.Mesh(new THREE.SphereGeometry(0.12,12,10),mS));h.position.y=1.58;g.add(h);
+ const hat=sh(new THREE.Mesh(new THREE.SphereGeometry(0.135,12,8,0,Math.PI*2,0,Math.PI/2),mH));hat.position.y=1.62;g.add(hat);return g;}
+function coilGeo(ro,ri,w){const s=new THREE.Shape();s.absarc(0,0,ro,0,Math.PI*2,false);const h=new THREE.Path();h.absarc(0,0,ri,0,Math.PI*2,true);s.holes.push(h);const g=new THREE.ExtrudeGeometry(s,{depth:w,bevelEnabled:false,curveSegments:36});g.translate(0,0,-w/2);return g;}
+const CG=coilGeo(0.65,0.25,0.61);
+function coil(m){const g=new THREE.Group();g.add(sh(new THREE.Mesh(CG,m||M.galv)));g.add(box(0.06,0.38,0.63,M.dark,0,0.45,0));return g;}
+
+/* geometry of the building */
+const R=7.5, CY=-0.3, CZ=7.5, TH0=Math.asin(0.3/R);
+const yArch=z=>CY+Math.sqrt(Math.max(0,R*R-(z-CZ)*(z-CZ)));
+function panelGeo(){
+ const P=[[0.03,-0.114],[0,-0.114],[0,0],[0.305,0],[0.305,-0.114],[0.275,-0.114]];
+ const N=72;const pos=[];const idx=[];
+ for(let k=0;k<=N;k++){const th=TH0+(Math.PI-2*TH0)*k/N;for(let j=0;j<P.length;j++){const r=R+P[j][1];pos.push(P[j][0],CY+r*Math.sin(th),CZ+r*Math.cos(th));}}
+ const C=P.length;for(let k=0;k<N;k++)for(let j=0;j<C-1;j++){const a=k*C+j,b=a+1,c=a+C,d=c+1;idx.push(a,c,b,b,c,d);}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();return g;
+}
+const PG=panelGeo();
+
+/* ---------- callouts ---------- */
+const lblHost=document.getElementById('pLabels');let callouts=[];let showLbl=true;const tmp=new V3();
+function setCallouts(list){lblHost.innerHTML='';callouts=(list||[]).map(c=>{const d=document.createElement('div');d.className='callout';d.innerHTML=c[0];lblHost.appendChild(d);return{el:d,p:typeof c[1]==='function'?c[1]:new V3(...c[1])};});}
+function drawCallouts(){const w=host.clientWidth,h=host.clientHeight;callouts.forEach(c=>{const p=typeof c.p==='function'?c.p():c.p;if(!p){c.el.style.display='none';return;}tmp.copy(p).project(camera);const vis=showLbl&&tmp.z<1&&Math.abs(tmp.x)<0.98&&tmp.y<0.9&&tmp.y>-0.85;c.el.style.display=vis?'block':'none';if(vis){c.el.style.left=((tmp.x+1)/2*w)+'px';c.el.style.top=((1-tmp.y)/2*h)+'px';}});}
+
+/* =========================================================
+   REGION 1: FACTORY
+   ========================================================= */
+const F=new THREE.Group();scene.add(F);
+{
+ F.add(box(74,0.1,28,mat(0x3a444d,{roughness:0.92}),30,-0.05,10));
+ const mY=mat(0xc9a43a,{roughness:0.8});
+ F.add(box(72,0.012,0.12,mY,30,0.005,1.6),box(72,0.012,0.12,mY,30,0.005,18.6));
+ const mCol=mat(0x55626e,{metalness:0.5,roughness:0.5});
+ for(let x=-5;x<=66;x+=7.1){[-3,23].forEach(z=>F.add(box(0.4,8.2,0.4,mCol,x,4.1,z)));F.add(line([new V3(x,8.2,-3),new V3(x,10.4,10),new V3(x,8.2,23)],0x3c4d5e));}
+ F.add(box(72,0.35,0.35,mCol,30,7.8,-3),box(72,0.35,0.35,mCol,30,7.8,23),box(72,2.2,0.12,mat(0x2c3a48),30,1.1,-3.3));
+}
+/* station 1: design */
+const holo=new THREE.Group();const holoLines=[];let holoPivot;
+{
+ F.add(box(7.4,0.08,5,mat(0x1a2836,{roughness:0.4}),4,0.86,10));
+ [[0.6,7.8],[7.4,7.8],[0.6,12.2],[7.4,12.2]].forEach(p=>F.add(box(0.08,0.82,0.08,M.dark,p[0],0.41,p[1])));
+ const glow=new THREE.Mesh(new THREE.PlaneGeometry(7,4.6),new THREE.MeshBasicMaterial({color:0x14324d}));glow.rotation.x=-Math.PI/2;glow.position.set(4,0.905,10);F.add(glow);
+ const lm=new THREE.LineBasicMaterial({color:0x8fc3ff});
+ const add=pts=>{const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lm);holo.add(l);holoLines.push(l);};
+ add([new V3(-0.5,0,-0.4),new V3(23.5,0,-0.4),new V3(23.5,0,15.4),new V3(-0.5,0,15.4),new V3(-0.5,0,-0.4)]);
+ [0,5.5,11.5,17.5,23].forEach(x=>add([new V3(x,0,-1.2),new V3(x,0,16.2)]));
+ for(let i=0;i<=19;i++){const x=i*23/19;const pts=[];for(let k=0;k<=36;k++){const th=TH0+(Math.PI-2*TH0)*k/36;pts.push(new V3(x,CY+R*Math.sin(th),CZ+R*Math.cos(th)));}add(pts);}
+ for(let k=1;k<12;k++){const th=TH0+(Math.PI-2*TH0)*k/12;add([new V3(0,CY+R*Math.sin(th),CZ+R*Math.cos(th)),new V3(23,CY+R*Math.sin(th),CZ+R*Math.cos(th))]);}
+ const rect=(x,z0,z1,y0,y1)=>add([new V3(x,y0,z0),new V3(x,y0,z1),new V3(x,y1,z1),new V3(x,y1,z0),new V3(x,y0,z0)]);
+ rect(0,5.6,9.4,0,4.6);rect(0,5.6,9.4,4.7,5.7);rect(23,5.6,9.4,4.7,5.7);rect(23,13.1,14.0,0,2.1);
+ [5.6,9.4].forEach(z=>{add([new V3(0,0,z),new V3(0,yArch(z),z)]);add([new V3(23,0,z),new V3(23,yArch(z),z)]);});
+ [2.5,8,14,19.5].forEach(x=>add([new V3(x,yArch(8.4),8.4),new V3(x,yArch(8.4)+0.8,8.4)]));
+ holo.scale.setScalar(0.22);holo.position.set(-11.5*0.22,0,-7.5*0.22);
+ holoPivot=new THREE.Group();holoPivot.position.set(4,0.95,10);holoPivot.add(holo);F.add(holoPivot);
+ [[1.5,16.5],[5.5,16.5]].forEach(p=>{F.add(box(2.4,0.06,1.1,M.dark,p[0],0.76,p[1]),box(0.06,0.74,1,M.dark,p[0]-1.1,0.37,p[1]),box(0.06,0.74,1,M.dark,p[0]+1.1,0.37,p[1]));
+  F.add(box(1.1,0.62,0.04,new THREE.MeshStandardMaterial({color:0x0e2236,emissive:0x2a6aa8,emissiveIntensity:0.9}),p[0],1.2,p[1]-0.3));});
+ const e1=human(0x8fc3ff);e1.position.set(1.5,0,17.5);F.add(e1);
+ const e2=human(0x8fc3ff);e2.position.set(7.9,0,11.6);F.add(e2);
+ const e3=human(0x8fc3ff);e3.position.set(5.5,0,17.5);F.add(e3);
+}
+/* station 2: coils */
+let pulse;
+{
+ [11,12.7,14.4,16.1].forEach(x=>{F.add(box(1.2,0.2,0.7,M.wood,x,0.1,4.6));const c=coil();c.position.set(x,0.85,4.6);F.add(c);});
+ F.add(box(1.8,0.16,1.4,M.yellow,14,0.08,12));
+ const c=coil();c.position.set(14,0.81,12);F.add(c);
+ const strip=sh(new THREE.Mesh(new THREE.PlaneGeometry(2.2,0.61),M.galv));strip.rotation.x=-Math.PI/2;strip.position.set(15.1,0.17,12);F.add(strip);
+ const insp=human(0xf2a33a);insp.position.set(16.5,0,12.9);F.add(insp);
+ F.add(box(0.2,0.06,0.1,M.yellow,16.0,0.2,12.2));
+ pulse=new THREE.Mesh(new THREE.RingGeometry(0.1,0.16,24),new THREE.MeshBasicMaterial({color:0xf2a33a,side:THREE.DoubleSide,transparent:true}));pulse.rotation.x=-Math.PI/2;pulse.position.set(15.8,0.19,12.05);F.add(pulse);
+ F.add(line([new V3(14,7.6,12),new V3(14,2.3,12)],0x8ea2b4));F.add(box(0.3,0.3,0.3,M.yellow,14,2.15,12));
+ F.add(box(0.6,0.5,1.4,M.dark,18.2,0.25,8));F.add(box(1.4,1.0,0.05,M.white,18.2,1.0,8.75));
+}
+/* station 3: saw & welding */
+let sawArm,tubeFeed,sparks,sparkLight;const weldPt=new V3(25.2,0.98,12.4);
+{
+ F.add(box(1.4,0.9,0.9,M.orange,21.3,0.45,4));
+ sawArm=new THREE.Group();sawArm.position.set(21.3,1.6,4);sawArm.add(box(1.5,0.25,0.25,M.orange,0,0,0),box(1.3,0.02,0.04,M.white,0,-0.18,0));F.add(sawArm);
+ F.add(box(6.2,0.12,0.6,M.steel,25.3,0.85,4));
+ for(let x=22.6;x<=28.2;x+=0.7){const r=cyl(0.05,0.05,0.62,M.tube,x,0.94,4,10);r.rotation.x=Math.PI/2;F.add(r);}
+ tubeFeed=box(6,0.1,0.1,M.tube,25.3,1.04,4);F.add(tubeFeed);
+ for(let i=0;i<3;i++)for(let j=0;j<2;j++)F.add(box(6,0.3,0.5,M.tube,25.5,0.18+j*0.32,0.2+i*0.7));
+ F.add(box(1.4,0.12,1.0,M.wood,21.3,0.06,6.2));for(let i=0;i<5;i++)F.add(box(1.2,0.1,0.1,M.tube,21.3,0.17+Math.floor(i/3)*0.1,5.9+(i%3)*0.22));
+ F.add(box(7,0.1,3.4,M.dark,26,0.8,12.4));[[22.7,10.9],[29.3,10.9],[22.7,13.9],[29.3,13.9]].forEach(p=>F.add(box(0.1,0.76,0.1,M.dark,p[0],0.38,p[1])));
+ F.add(box(6.2,0.1,0.1,M.steel,25.6,0.9,11.4),box(6.2,0.1,0.1,M.steel,25.6,0.9,13.4));
+ [23.0,25.2,27.4,28.6].forEach(x=>F.add(box(0.1,0.1,2.0,M.steel,x,0.9,12.4)));
+ const wl=human(0x3d6fa8);wl.position.set(25.2,0,14.4);F.add(wl);F.add(box(0.3,0.26,0.08,M.dark,25.2,1.58,14.26));
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(90*3),3));
+ sparks=new THREE.Points(g,new THREE.PointsMaterial({color:0xffb347,size:0.06}));F.add(sparks);
+ sparkLight=new THREE.PointLight(0xffa040,0,5);sparkLight.position.copy(weldPt).add(new V3(0,0.3,0));F.add(sparkLight);
+}
+/* station 4: hot-dip galvanizing */
+const TANKS=[['Обезжиривание',0x5f7f62],['Травление HCl',0x9a8a4a],['Промывка',0x4a7aa0],['Флюсование',0x7a9a9a],['Сушка',null],['Цинк 450 °C',0xaab4bc],['Охлаждение',0x4a7aa0]];
+const TX=i=>34+i*2;
+let hoist={},fumes;
+{
+ TANKS.forEach((t,i)=>{const x=TX(i);
+  F.add(box(1.8,1.3,5.2,mat(0x3c4650,{metalness:0.4,roughness:0.6}),x,0.65,11));
+  if(t[1]!==null){const lm=i===5?new THREE.MeshStandardMaterial({color:0xb8c2ca,metalness:0.9,roughness:0.2,emissive:0x5a2a00,emissiveIntensity:0.7}):mat(t[1],{roughness:0.2,metalness:0.2});
+   const liq=new THREE.Mesh(new THREE.PlaneGeometry(1.6,5.0),lm);liq.rotation.x=-Math.PI/2;liq.position.set(x,1.31,11);F.add(liq);}
+  else F.add(box(1.8,0.6,5.2,mat(0x55606b),x,1.6,11));
+ });
+ const br=new THREE.Group();br.add(box(0.5,0.5,26.5,M.yellow,0,7.45,10));const tr=box(0.9,0.5,0.9,M.yellow,0,7.1,11);br.add(tr);F.add(br);
+ const cable=line([new V3(),new V3()],0x222a30);F.add(cable);
+ const hang=new THREE.Group();hang.add(box(0.16,0.16,4.8,M.yellow,0,0.5,0));
+ const bm=mat(0x4a5560,{metalness:0.6,roughness:0.45});
+ [-0.2,0,0.2].forEach(dx=>hang.add(box(0.1,0.1,4.4,bm,dx,0,0)));[-1.6,1.6].forEach(dz=>hang.add(box(0.6,0.1,0.1,bm,0,0,dz)));
+ hang.add(line([new V3(0,0.5,-2),new V3(0,0.05,-1.6)],0x222a30),line([new V3(0,0.5,2),new V3(0,0.05,1.6)],0x222a30));
+ F.add(hang);hoist={br,cable,hang,bm,x:32,y:3.2};
+ const g=new THREE.BufferGeometry();const N=60;const a=new Float32Array(N*3);for(let i=0;i<N;i++){a[i*3]=TX(5)+(rnd()-0.5)*1.4;a[i*3+1]=1.4+rnd()*2.5;a[i*3+2]=11+(rnd()-0.5)*4.6;}
+ g.setAttribute('position',new THREE.Float32BufferAttribute(a,3));fumes=new THREE.Points(g,new THREE.PointsMaterial({color:0x9aa7b2,size:0.12,transparent:true,opacity:0.45}));F.add(fumes);
+ const op=human(0xf2a33a);op.position.set(TX(5),0,14.4);F.add(op);
+}
+function setHoist(x,y,galv){hoist.x=x;hoist.y=y;hoist.br.position.x=x;hoist.hang.position.set(x,y,11);const p=hoist.cable.geometry.attributes.position;p.setXYZ(0,x,6.85,11);p.setXYZ(1,x,y+0.58,11);p.needsUpdate=true;hoist.bm.color.setHex(galv?0xc9d4dc:0x4a5560);hoist.bm.metalness=galv?0.8:0.6;}
+setHoist(31.5,3.2,false);
+/* station 5: gates, doors, windows */
+const gLeaves=[];
+{
+ const fr=new THREE.Group();fr.position.set(51,0,5.5);
+ fr.add(box(0.12,4.7,0.12,M.tube,0,2.35,-1.95),box(0.12,4.7,0.12,M.tube,0,2.35,1.95),box(0.12,0.12,4.0,M.tube,0,4.66,0));
+ [[-1.9,1],[1.9,-1]].forEach(([hz,dir])=>{const pv=new THREE.Group();pv.position.set(0,0,hz);pv.add(box(0.06,4.5,1.88,M.orange,0,2.3,dir*0.94));for(let k=1;k<4;k++)pv.add(box(0.08,0.06,1.8,M.tube,0.04,k*1.14,dir*0.94));if(dir===1)pv.add(box(0.08,2.06,0.96,mat(0xc77f22),0.03,1.08,dir*0.94));pv.userData.dir=dir;gLeaves.push(pv);fr.add(pv);});
+ F.add(fr);
+ F.add(box(3.2,0.1,5.4,M.dark,51,0.8,13.2),box(1.9,0.06,4.5,M.orange,50.6,0.88,13.2));
+ F.add(box(0.1,2.2,1.0,M.tube,54.2,1.1,9.2),box(0.06,2.06,0.86,M.orange,54.25,1.06,9.2));
+ [16.2,17.6].forEach(z=>{const w=new THREE.Group();w.add(box(3.8,1.0,0.05,M.glass,0,0.5,0),box(3.8,0.06,0.07,M.white,0,1.0,0),box(3.8,0.06,0.07,M.white,0,0,0),box(0.06,1.0,0.07,M.white,-1.9,0.5,0),box(0.06,1.0,0.07,M.white,1.9,0.5,0),box(0.06,1.0,0.07,M.white,0,0.5,0));w.position.set(50.2,0.1,z);w.rotation.x=-0.18;F.add(w);});
+ F.add(box(1.3,0.14,1.3,M.wood,53.8,0.07,16.8));
+ [[-0.3,-0.3],[0.3,-0.3],[-0.3,0.3],[0.3,0.3]].forEach(o=>{const d=sh(new THREE.Mesh(new THREE.SphereGeometry(0.26,14,8,0,Math.PI*2,0,Math.PI*0.62),M.galv));d.position.set(53.8+o[0],0.44,16.8+o[1]);d.scale.y=1.2;F.add(d);F.add(cyl(0.2,0.2,0.3,M.galv,53.8+o[0],0.29,16.8+o[1]));});
+ const w=human(0xf2a33a);w.position.set(52.9,0,12.6);F.add(w);
+}
+/* station 6: QC & packing */
+let fork;
+{
+ const strap=mat(0x1f2328);
+ const crate=(w,h,d,x,z)=>{F.add(box(w,h,d,M.wood,x,h/2+0.12,z),box(w+0.04,0.12,d+0.04,M.wood,x,0.06,z));[-0.3,0.3].forEach(f=>F.add(box(w+0.02,h+0.02,0.04,strap,x,h/2+0.12,z+f*d)));F.add(box(0.3,0.2,0.01,M.white,x,h*0.6+0.12,z+d/2+0.02));};
+ crate(2.0,1.4,4.8,57,4.4);crate(1.2,1.2,4.2,59.6,4.4);crate(1.4,0.9,1.4,62,3.6);crate(1.4,0.9,1.4,62,5.4);
+ for(let i=0;i<3;i++){F.add(box(6.6,0.36,0.62,M.galv,59.5,0.3,8.4+i*1.0));[-2.6,0,2.6].forEach(dx=>F.add(box(0.05,0.4,0.66,strap,59.5+dx,0.3,8.4+i*1.0)));F.add(box(6.8,0.12,0.12,M.wood,59.5,0.06,8.4+i*1.0));}
+ [56.6,58.6,60.6,62.6].forEach(x=>{F.add(box(1.2,0.2,0.7,M.wood,x,0.1,19.6));const c=coil(mat(0x6b7a86,{roughness:0.7}));c.position.set(x,0.85,19.6);F.add(c);});
+ fork=new THREE.Group();
+ fork.add(box(1.2,0.9,1.9,M.yellow,0,0.7,0),box(1.1,0.06,1.2,M.dark,0,2.2,-0.2));
+ [[-0.5,-0.7],[0.5,-0.7],[-0.5,0.4],[0.5,0.4]].forEach(p=>fork.add(box(0.06,1.0,0.06,M.dark,p[0],1.7,p[1])));
+ fork.add(box(1.0,2.6,0.12,M.dark,0,1.4,1.05),box(0.12,0.05,1.1,M.dark,-0.3,0.35,1.65),box(0.12,0.05,1.1,M.dark,0.3,0.35,1.65),box(1.1,0.8,1.0,M.wood,0,0.8,1.65));
+ [[-0.62,-0.6],[0.62,-0.6],[-0.62,0.7],[0.62,0.7]].forEach(p=>{const w=cyl(0.28,0.28,0.2,M.rubber,p[0],0.28,p[1],14);w.rotation.z=Math.PI/2;fork.add(w);});
+ fork.rotation.y=Math.PI/2;fork.position.set(58,0,14);F.add(fork);
+ const qi=human(0x5cc18b);qi.position.set(57.2,0,10.9);F.add(qi);F.add(box(0.25,0.32,0.03,M.white,57.2,1.15,11.08));
+}
+
+/* =========================================================
+   REGION 2: ROAD
+   ========================================================= */
+const Rd=new THREE.Group();scene.add(Rd);const movers=[];
+function truck(cab,len,low){const g=new THREE.Group();const tx=len/2+1.6;
+ g.add(box(3.4,0.5,2.3,M.dark,tx,0.95,0),box(2.2,2.5,2.45,mat(cab),tx+0.6,2.35,0),box(0.06,1.0,2.1,M.glass,tx+1.72,2.9,0),box(2.0,0.2,2.3,mat(cab),tx+0.5,3.7,0));
+ const dh=low?0.9:1.35;g.add(box(len,0.25,2.5,M.steel,0,dh,0));if(low)g.add(box(3,0.25,2.5,M.steel,len/2-1.2,1.35,0));
+ [tx+1.0,tx-0.9,-len/2+0.8,-len/2+2.1,-len/2+3.4].forEach(x=>[-1.05,1.05].forEach(z=>{const w=cyl(0.5,0.5,0.4,M.rubber,x,0.5,z,16);w.rotation.x=Math.PI/2;g.add(w);}));
+ g.userData.deck=dh+0.125;return g;}
+function makeLine(){const g=new THREE.Group();
+ g.add(box(2.4,0.5,11,M.steel,0,0.45,4.5));
+ [7.6,8.8].forEach(z=>[-1.05,1.05].forEach(x=>{const w=cyl(0.45,0.45,0.35,M.rubber,x,0.45,z,14);w.rotation.z=Math.PI/2;g.add(w);}));
+ g.add(box(0.2,0.7,0.2,M.dark,0,0.35,-0.6));
+ g.add(box(0.25,1.4,0.3,M.orange,-0.85,1.35,0),box(0.25,1.4,0.3,M.orange,0.85,1.35,0));
+ const cl=coil();cl.rotation.y=Math.PI/2;cl.position.set(0,1.75,0);g.add(cl);
+ g.add(box(1.8,0.9,6.4,M.orange,0,1.15,5.0));
+ for(let i=0;i<14;i++){const z=2.1+i*0.44;g.add(box(1.9,0.5,0.16,mat(0xc77f22),0,1.85,z));const r=cyl(0.09,0.09,1.5,M.galv,0,1.72,z,12);r.rotation.z=Math.PI/2;g.add(r);}
+ g.add(box(0.5,0.9,0.4,M.dark,1.35,1.6,2.0));
+ const strip=sh(new THREE.Mesh(new THREE.PlaneGeometry(0.61,1.88),M.galv));strip.rotation.x=1.274;strip.position.set(0,1.38,0.9);g.add(strip);
+ const bender=new THREE.Group();bender.add(box(1.3,1.1,0.9,M.orange,0,2.0,8.7),box(1.4,0.2,1.0,M.dark,0,2.6,8.7));g.add(bender);
+ return {g,coil:cl,bender,exit:new V3(0,1.65,8.2)};}
+function makeCrane(){const g=new THREE.Group();
+ g.add(box(10,0.9,2.5,M.yellow,0,1.15,0),box(2.0,2.0,2.5,M.yellow,5.6,1.9,0),box(0.06,0.9,2.2,M.glass,6.62,2.3,0));
+ [-3.8,-2.4,-1.0,3.0,4.6].forEach(x=>[-1.15,1.15].forEach(z=>{const w=cyl(0.55,0.55,0.45,M.rubber,x,0.55,z,16);w.rotation.x=Math.PI/2;g.add(w);}));
+ const outr=new THREE.Group();[-3.6,3.2].forEach(x=>[-1,1].forEach(s=>{outr.add(box(0.3,0.25,2.4,M.dark,x,0.9,s*2.2),box(0.25,0.9,0.25,M.dark,x,0.45,s*3.3),box(0.7,0.08,0.7,M.wood,x,0.04,s*3.3));}));g.add(outr);
+ const turret=new THREE.Group();turret.position.set(-1.8,1.6,0);g.add(turret);
+ turret.add(box(3.0,1.0,2.2,M.yellow,-0.3,0.5,0),box(1.0,1.2,0.9,M.yellow,0.6,0.9,-1.45),box(1.2,0.6,1.8,M.dark,-1.6,0.4,0));
+ const boomP=new THREE.Group();boomP.position.set(0.8,1.1,0);turret.add(boomP);
+ const bg=new THREE.BoxGeometry(1,0.7,0.6);bg.translate(0.5,0,0);const boom=sh(new THREE.Mesh(bg,M.yellow));boomP.add(boom);
+ const bg2=new THREE.BoxGeometry(1,0.48,0.4);bg2.translate(0.5,0,0);const boom2=sh(new THREE.Mesh(bg2,M.orange));boomP.add(boom2);
+ boomP.rotation.z=0.04;boom.scale.x=8.4;boom2.scale.x=8.6;
+ return {g,turret,boomP,boom,boom2,outr};}
+function aimCrane(c,tip){
+ c.g.updateMatrixWorld(true);const tp=c.turret.getWorldPosition(new V3());const d=tip.clone().sub(tp);
+ c.turret.rotation.y=Math.atan2(-d.z,d.x)-c.g.rotation.y;c.g.updateMatrixWorld(true);
+ const pp=c.boomP.getWorldPosition(new V3());const e=tip.clone().sub(pp);const hz=Math.hypot(e.x,e.z);const L=e.length();
+ c.boomP.rotation.z=Math.atan2(e.y,hz);c.boom.scale.x=Math.min(L*0.62,9);c.boom2.scale.x=L;}
+let roadTrucks=[];
+{
+ const gr=new THREE.Mesh(new THREE.PlaneGeometry(560,320),M.sand);gr.rotation.x=-Math.PI/2;gr.receiveShadow=true;Rd.add(gr);
+ Rd.add(box(560,0.06,8,mat(0x2b2e31,{roughness:0.95}),0,0.03,0));
+ const ln=box(560,0.02,0.15,M.white,0,0.07,3.6);ln.castShadow=false;Rd.add(ln);const ln2=ln.clone();ln2.position.z=-3.6;Rd.add(ln2);
+ for(let x=-240;x<240;x+=10){const d=box(4,0.02,0.15,M.white,x,0.07,0);d.castShadow=false;Rd.add(d);movers.push(d);}
+ const mD=mat(0x7d6948,{roughness:1});
+ for(let i=0;i<46;i++){const r=6+rnd()*16;const d=new THREE.Mesh(new THREE.SphereGeometry(r,16,8,0,Math.PI*2,0,Math.PI/2),mD);d.scale.y=0.14+rnd()*0.14;const side=rnd()<0.5?-1:1;d.position.set(-240+rnd()*480,0,side*(20+rnd()*100));d.receiveShadow=true;Rd.add(d);movers.push(d);}
+ for(let x=-240;x<240;x+=32){const p=new THREE.Group();p.add(cyl(0.12,0.15,8,M.wood,0,4,0),box(0.1,0.1,2.2,M.wood,0,7.6,0));p.position.set(x,0,-10);Rd.add(p);movers.push(p);}
+ for(let x=-240;x<240;x+=120){const s=new THREE.Group();s.add(cyl(0.06,0.06,2.4,M.white,0,1.2,0),box(2.4,1.0,0.06,mat(0x2f7d4f),0,2.6,0));s.position.set(x,0,5.4);Rd.add(s);movers.push(s);}
+ const t1=truck(0x3d6fa8,13.6);t1.position.set(-30,0,-1.8);[-4,0,4].forEach(x=>{t1.add(box(1.2,0.25,0.8,M.wood,x,t1.userData.deck+0.12,0));const c=coil();c.rotation.y=Math.PI/2;c.position.set(x,t1.userData.deck+0.9,0);t1.add(c);});Rd.add(t1);
+ const t2=truck(0xe8edf1,13.6);t2.position.set(-8,0,-1.8);const dk=t2.userData.deck;
+ for(let i=0;i<3;i++)t2.add(box(6.6,0.36,0.6,M.galv,-3,dk+0.2,-0.7+i*0.7));t2.add(box(1.6,1.4,2.2,M.wood,2.6,dk+0.7,0),box(1.2,1.0,2.2,M.wood,4.8,dk+0.5,0),box(1.6,0.8,1.4,M.wood,-3,dk+0.78,0));t2.add(box(1.4,0.9,1.4,M.wood,-5.8,dk+0.45,0));Rd.add(t2);
+ const t3=truck(0xc0392b,14,true);t3.position.set(14,0,-1.8);const ml=makeLine();ml.g.rotation.y=-Math.PI/2;ml.g.position.set(4.5,t3.userData.deck-0.2,0);ml.bender.visible=false;t3.add(ml.g);Rd.add(t3);
+ const cr=makeCrane();cr.g.position.set(36,0,-1.8);cr.outr.visible=false;Rd.add(cr.g);
+ roadTrucks=[t1,t2,t3,cr.g];
+}
+
+/* =========================================================
+   REGION 3: SITE
+   ========================================================= */
+const S=new THREE.Group();scene.add(S);
+const GY=-0.3;
+{
+ const gr=new THREE.Mesh(new THREE.PlaneGeometry(260,260),mat(0x2a2620,{roughness:1}));gr.rotation.x=-Math.PI/2;gr.position.y=GY;gr.receiveShadow=true;S.add(gr);
+ const grid=new THREE.GridHelper(160,80,0x3a4a5a,0x222d38);grid.position.set(11.5,GY+0.004,7.5);grid.material.opacity=0.3;grid.material.transparent=true;S.add(grid);
+ S.add(box(24,0.3,15.8,M.conc,11.5,-0.15,7.5));
+ const mEmb=mat(0xd0d8de,{metalness:0.6,roughness:0.35});const xs=[0];for(let x=1.5;x<=21.6;x+=2)xs.push(x);xs.push(23);
+ xs.forEach(x=>[0.12,14.88].forEach(z=>S.add(box(0.26,0.03,0.26,mEmb,x,0.012,z))));
+ const m=new THREE.LineDashedMaterial({color:0x4d6175,dashSize:0.5,gapSize:0.35});
+ [0,5.5,11.5,17.5,23].forEach(x=>{const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new V3(x,GY+0.01,-2.2),new V3(x,GY+0.01,17.2)]),m);l.computeLineDistances();S.add(l);});
+ [0,5.1,9.9,15].forEach(z=>{const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new V3(-2.3,GY+0.01,z),new V3(25.3,GY+0.01,z)]),m);l.computeLineDistances();S.add(l);});
+}
+const SP={};
+/* cabins */
+SP.cabins=new THREE.Group();SP.cabins.add(box(6,2.6,2.4,M.blue,32,1.0,-16),box(6,2.6,2.4,M.white,32,1.0,-12.8),box(6,2.6,2.4,mat(0x7d8e99),24,1.0,-24));S.add(SP.cabins);
+/* geodesy */
+SP.geo=new THREE.Group();const geoBeam=[];
+{
+ const tp=new THREE.Group();tp.position.set(-3.5,GY,-3.5);[0,2.1,4.2].forEach(a=>{const l=cyl(0.025,0.025,1.6,M.yellow,Math.cos(a)*0.35,0.75,Math.sin(a)*0.35,6);l.rotation.z=Math.cos(a)*0.22;l.rotation.x=-Math.sin(a)*0.22;tp.add(l);});tp.add(box(0.22,0.28,0.2,M.yellow,0,1.65,0),box(0.12,0.12,0.24,M.dark,0,1.75,0.05));SP.geo.add(tp);
+ const sv=human(0xf2a33a);sv.position.set(-4.2,GY,-4.0);SP.geo.add(sv);
+ const pm=human(0xf2a33a);const pole=cyl(0.02,0.02,2.0,M.white,0.3,1.0,0,6);pm.add(pole);const pr=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8),new THREE.MeshBasicMaterial({color:0xef6b5b}));pr.position.set(0.3,2.05,0);pm.add(pr);SP.geo.add(pm);SP.prism=pm;
+ const bl=line([new V3(-3.5,1.45,-3.5),new V3(0,0,0)],0xef6b5b);SP.geo.add(bl);geoBeam.push(bl);
+ const mPeg=mat(0xef6b5b);[[0,-1.8],[23,-1.8],[-1.8,0],[-1.8,15],[0,16.8],[23,16.8],[24.8,0],[24.8,15]].forEach(p=>SP.geo.add(cyl(0.04,0.04,0.5,mPeg,p[0],GY+0.25,p[1],6)));
+ S.add(SP.geo);
+}
+/* plinth Рц-1 */
+SP.plinth=new THREE.Group();const plSegs=[];let plSpark,plWelder;
+{
+ const mP=mat(0x8b9daa,{metalness:0.55,roughness:0.4});
+ const segs=[[new V3(-0.09,0,0.05),new V3(23.09,0,0.05)],[new V3(23.0,0,0.05),new V3(23.0,0,14.95)],[new V3(23.09,0,14.95),new V3(-0.09,0,14.95)],[new V3(0,0,14.95),new V3(0,0,0.05)]];
+ let acc=0;segs.forEach(s=>{const len=s[0].distanceTo(s[1]);const g=new THREE.BoxGeometry(1,0.12,0.08);g.translate(0.5,0.06,0);const m=sh(new THREE.Mesh(g,mP));m.position.copy(s[0]);m.rotation.y=-Math.atan2(s[1].z-s[0].z,s[1].x-s[0].x);m.scale.x=len;SP.plinth.add(m);plSegs.push({m,len,a:acc,s:s[0],e:s[1]});acc+=len;});
+ SP.plinthLen=acc;
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(50*3),3));plSpark=new THREE.Points(g,new THREE.PointsMaterial({color:0xffb347,size:0.07}));SP.plinth.add(plSpark);
+ plWelder=human(0x3d6fa8);SP.plinth.add(plWelder);S.add(SP.plinth);
+}
+/* mobile rolling line */
+const LN=makeLine();LN.g.position.set(-14,GY,-11);S.add(LN.g);
+const lineExit=new V3(-14,GY+1.65,-2.8);
+SP.gen=new THREE.Group();SP.gen.add(box(1.4,1.3,2.6,mat(0x2f6fb0),-17.5,GY+0.65,-8),box(0.1,0.6,0.1,M.dark,-17.5,GY+1.6,-9));S.add(SP.gen);
+SP.lineCrew=new THREE.Group();[[-12.4,-8.8],[-15.6,-4.2],[-12.6,-1.6]].forEach(p=>{const h=human(0xf2a33a);h.position.set(p[0],GY,p[1]);SP.lineCrew.add(h);});S.add(SP.lineCrew);
+/* straight profile coming out */
+SP.straight=new THREE.Group();{const mk=(w,h,d,x,y)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,0.5);return sh(new THREE.Mesh(g,M.galv));};SP.straight.add(mk(0.305,0.008,1,0,0),mk(0.008,0.114,1,-0.15,-0.057),mk(0.008,0.114,1,0.15,-0.057),mk(0.03,0.008,1,-0.135,-0.114),mk(0.03,0.008,1,0.135,-0.114));SP.straight.position.copy(lineExit);S.add(SP.straight);}
+SP.stack=new THREE.Group();for(let i=0;i<14;i++)SP.stack.add(box(0.32,0.115,5.2,M.galv,-19.2+(i%2)*0.34,GY+0.06+Math.floor(i/2)*0.12,-5));S.add(SP.stack);
+/* arc forming */
+const PGR=panelGeo();const arcRev=new THREE.Mesh(PGR,M.galv);arcRev.castShadow=true;
+SP.arc=new THREE.Group();SP.arc.add(arcRev);SP.arc.rotation.y=Math.PI;SP.arc.position.set(lineExit.x+0.15,lineExit.y,lineExit.z+0.4+(CZ+R*Math.cos(TH0)));S.add(SP.arc);
+SP.arcStack=new THREE.Group();for(let i=0;i<12;i++){const m=sh(new THREE.Mesh(PG,M.galv));m.position.set(-21-i*0.33,0,-3);SP.arcStack.add(m);}S.add(SP.arcStack);
+/* sections */
+const NSEC=19, X0=-0.09;const secs=[];
+const qFlat=new Q().setFromAxisAngle(new V3(0,1,0),Math.PI/2).multiply(new Q().setFromAxisAngle(new V3(0,0,1),-Math.PI/2));
+const IDQ=new Q();const FLAT=new V3(1,0.36,-9);
+for(let i=0;i<NSEC;i++){const g=new THREE.Group();g.userData.xs=X0+i*4*0.305+0.61;g.userData.panels=[];
+ for(let j=0;j<4;j++){const m=sh(new THREE.Mesh(PG,M.galv));m.position.x=j*0.305-0.61;g.add(m);g.userData.panels.push(m);}
+ g.visible=false;S.add(g);secs.push(g);}
+function poseSection(g,s){const p1=new V3(g.userData.xs,0,0);g.position.lerpVectors(FLAT,p1,s);g.position.y+=Math.sin(Math.PI*s)*5.5;g.quaternion.copy(qFlat).slerp(IDQ,s);}
+function resetPanels(g){g.userData.panels.forEach((m,j)=>m.position.x=j*0.305-0.61);}
+SP.lay=new THREE.Group();[2,6,10,14].forEach(x=>SP.lay.add(box(0.25,0.12,8.2,M.wood,x,GY+0.06,-12.4)));S.add(SP.lay);
+SP.seamer=new THREE.Group();SP.seamer.add(box(0.3,0.22,0.5,M.orange,0,0,0),box(0.12,0.12,0.12,M.dark,0,0.16,0));S.add(SP.seamer);
+SP.guys=new THREE.Group();[[0.5,-5],[0.5,20]].forEach(p=>SP.guys.add(line([new V3(0.6,6.8,7.5),new V3(-6,GY,p[1]>0?17:-2)],0xf2c94c)));S.add(SP.guys);
+/* screws */
+{const a=[];for(let i=0;i<76;i++){const x=X0+i*0.305+0.15;a.push(x,0.1,0.02,x,0.1,14.98);}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(a,3));SP.screws=new THREE.Points(g,new THREE.PointsMaterial({color:0xf2a33a,size:0.16}));S.add(SP.screws);}
+/* crane */
+const CR=makeCrane();CR.g.position.set(12,GY,-4.6);S.add(CR.g);
+SP.cable=line([new V3(),new V3()],0x222a30);S.add(SP.cable);
+SP.hook=new THREE.Group();SP.hook.add(box(0.35,0.45,0.3,M.yellow,0,0,0),box(2.6,0.12,0.12,M.yellow,0,-0.35,0));S.add(SP.hook);
+SP.slings=line([new V3(),new V3(),new V3()],0xf2c94c);S.add(SP.slings);
+SP.craneCrew=new THREE.Group();[[6,-7.2],[3.2,-17.4]].forEach(p=>{const h=human(0xf2a33a);h.position.set(p[0],GY,p[1]);SP.craneCrew.add(h);});S.add(SP.craneCrew);
+/* end frames */
+const mFrame=mat(0x6f8597,{metalness:0.55,roughness:0.4});
+function endFrame(x,posts,beams){const g=new THREE.Group();posts.forEach(z=>{const h=yArch(z)-0.12;g.add(box(0.1,h,0.1,mFrame,x,h/2,z));});beams.forEach(b=>g.add(box(0.1,0.1,b[1]-b[0],mFrame,x,b[2],(b[0]+b[1])/2)));return g;}
+SP.frames=new THREE.Group();SP.frames.add(endFrame(0.08,[5.6,9.4],[[5.6,9.4,4.6],[5.6,9.4,5.7]]),endFrame(22.92,[5.6,9.4,13.1,14.0],[[5.6,9.4,4.6],[5.6,9.4,5.7],[13.1,14.0,2.1]]));S.add(SP.frames);
+/* end wall strips */
+function corrTex(){const c=document.createElement('canvas');c.width=64;c.height=8;const x=c.getContext('2d');const gr=x.createLinearGradient(0,0,64,0);
+ gr.addColorStop(0,'#7f8e99');gr.addColorStop(0.1,'#c6d1d9');gr.addColorStop(0.5,'#b4c0c9');gr.addColorStop(0.9,'#c6d1d9');gr.addColorStop(1,'#6f7d88');x.fillStyle=gr;x.fillRect(0,0,64,8);
+ const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;}
+const mWall=mat(0xffffff,{map:corrTex(),metalness:0.55,roughness:0.42});
+const strips=[];SP.walls=new THREE.Group();S.add(SP.walls);
+[{x:0.02,holes:[[5.6,9.4,0,4.6],[5.6,9.4,4.7,5.7]]},{x:22.98,holes:[[13.1,14.0,0,2.1],[5.6,9.4,4.7,5.7]]}].forEach((E,ei)=>{
+ for(let k=0;;k++){const zc=0.1525+k*0.305;if(zc>15)break;const top=yArch(zc)-0.05;if(top<0.12)continue;
+  let segs=[[0,top]];E.holes.forEach(h=>{if(zc>h[0]&&zc<h[1]){const n=[];segs.forEach(([a,b])=>{if(h[3]<=a||h[2]>=b){n.push([a,b]);return;}if(h[2]-a>0.05)n.push([a,Math.min(b,h[2])]);if(b-h[3]>0.05)n.push([Math.max(a,h[3]),b]);});segs=n;}});
+  segs.forEach(([a,b])=>{const m=box(0.025,b-a,0.3,mWall,E.x,(a+b)/2,zc);m.userData.k=k;m.userData.y=(a+b)/2;SP.walls.add(m);strips.push(m);});}
+});
+const NK=Math.ceil(15/0.305);
+function scissor(){const g=new THREE.Group();g.add(box(1.2,0.3,2.4,M.orange,0,0.35,0));[-0.8,0.8].forEach(z=>[-0.45,0.45].forEach(x=>{const w=cyl(0.15,0.15,0.12,M.rubber,x,0.15,z,10);w.rotation.z=Math.PI/2;g.add(w);}));
+ const p=new THREE.Group();p.add(box(1.3,0.08,2.6,M.steel,0,0,0),box(1.3,0.05,0.05,M.yellow,0,1.0,1.28),box(1.3,0.05,0.05,M.yellow,0,1.0,-1.28),box(0.05,0.05,2.6,M.yellow,0.63,1.0,0),box(0.05,0.05,2.6,M.yellow,-0.63,1.0,0));const hm=human(0xf2a33a);hm.position.y=0.04;p.add(hm);g.add(p);
+ const arms=line([new V3(0,0.5,-1),new V3(0,1,1),new V3(0,1.5,-1),new V3(0,2,1)],0x222a30);g.add(arms);g.userData={p,arms};return g;}
+SP.lift1=scissor();SP.lift2=scissor();S.add(SP.lift1,SP.lift2);
+function setLift(L,x,z,h){L.position.set(x,GY,z);L.userData.p.position.y=0.5+h;const a=L.userData.arms.geometry.attributes.position;const n=4;for(let i=0;i<n;i++){a.setXYZ(i,0,0.5+h*i/(n-1),i%2?1:-1);}a.needsUpdate=true;}
+/* openings */
+const leaves=[];SP.open=new THREE.Group();
+{
+ const mGate=mat(0xe39a36,{metalness:0.4,roughness:0.45});
+ [[5.6,1],[9.4,-1]].forEach(([hz,dir])=>{const pv=new THREE.Group();pv.position.set(-0.03,0,hz);pv.add(box(0.06,4.55,1.88,mGate,0,2.28,dir*0.95));for(let k=1;k<4;k++)pv.add(box(0.08,0.06,1.8,mFrame,0,k*1.14,dir*0.95));if(dir===1)pv.add(box(0.08,2.06,0.96,mat(0xc77f22),-0.01,1.04,dir*0.95));pv.userData.dir=dir;leaves.push(pv);SP.open.add(pv);});
+ SP.open.add(box(0.06,2.06,0.86,mGate,23.03,1.03,13.55),box(0.07,0.04,0.12,M.dark,23.08,1.0,13.2));
+ [0.0,23.0].forEach(x=>{SP.open.add(box(0.04,1.0,3.8,M.glass,x,5.2,7.5),box(0.06,1.0,0.06,mFrame,x,5.2,6.23),box(0.06,1.0,0.06,mFrame,x,5.2,8.77));});
+ S.add(SP.open);
+}
+SP.seal=new THREE.Group();{const sm=new THREE.LineBasicMaterial({color:0xf2a33a,transparent:true});const r=(x,z0,z1,y0,y1)=>SP.seal.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new V3(x,y0,z0),new V3(x,y0,z1),new V3(x,y1,z1),new V3(x,y1,z0),new V3(x,y0,z0)]),sm));
+ r(-0.08,5.6,9.4,0.01,4.6);r(-0.08,5.6,9.4,4.7,5.7);r(23.08,5.6,9.4,4.7,5.7);r(23.08,13.1,14.0,0.01,2.1);SP.sealMat=sm;S.add(SP.seal);}
+const turbines=[];SP.vents=new THREE.Group();
+{const mt=mat(0xd9e1e7,{metalness:0.85,roughness:0.25});[2.5,8.0,14.0,19.5].forEach(x=>{const z=8.4,y=yArch(z);const t=new THREE.Group();t.position.set(x,y,z);t.add(cyl(0.2,0.2,0.5,mt,0,0.2,0));
+ const head=sh(new THREE.Mesh(new THREE.SphereGeometry(0.3,14,8,0,Math.PI*2,0,Math.PI*0.62),mt));head.position.y=0.55;head.scale.y=1.25;const rib=new THREE.Mesh(new THREE.SphereGeometry(0.305,14,8,0,Math.PI*2,0,Math.PI*0.62),new THREE.MeshStandardMaterial({color:0x5a6b78,wireframe:true}));rib.position.y=0.55;rib.scale.y=1.25;
+ const spin=new THREE.Group();spin.add(head,rib);t.add(spin);t.userData.y=y;turbines.push({t,spin});SP.vents.add(t);});S.add(SP.vents);}
+/* MEP */
+SP.mep=new THREE.Group();const lampMats=[];let inLights=[];
+{
+ const mWire=new THREE.LineBasicMaterial({color:0x5c6e7d});
+ [3.4,9.0,14.5,20.0].forEach(x=>[4.4,10.6].forEach(z=>{const lm=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xfff3c4,emissiveIntensity:0});lampMats.push(lm);SP.mep.add(box(1.5,0.07,0.16,lm,x,5.0,z));const top=yArch(z)-0.12;
+  SP.mep.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([new V3(x-0.6,5.04,z),new V3(x-0.6,top,z),new V3(x+0.6,5.04,z),new V3(x+0.6,top,z)]),mWire));}));
+ [4.4,10.6].forEach(z=>SP.mep.add(line([new V3(0.2,5.06,z),new V3(22.8,5.06,z)],0x8ea2b4)));
+ const mEm=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xff5a4a,emissiveIntensity:0});lampMats.push(mEm);
+ [[0.12,5.2],[0.12,9.8],[22.88,12.9]].forEach(p=>SP.mep.add(box(0.06,0.18,0.3,mEm,p[0],2.5,p[1])));
+ SP.mep.add(box(0.2,0.6,0.5,mat(0xdfe5ea),0.18,1.6,4.6));
+ SP.mep.add(line([new V3(0.2,1.9,4.6),new V3(0.2,5.06,4.6),new V3(0.2,5.06,4.4)],0x5cc18b));
+ const mG=new THREE.LineBasicMaterial({color:0x5cc18b});const p=[new V3(-4.6,GY+0.03,10.6),new V3(-1.6,GY+0.03,10.6),new V3(-3.1,GY+0.03,13.2)];
+ SP.mep.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(p),mG));p.forEach(v=>SP.mep.add(cyl(0.05,0.05,0.5,mat(0x5cc18b),v.x,v.y+0.15,v.z,8)));
+ SP.mep.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([p[1],new V3(-0.6,GY+0.03,10.6),new V3(-0.6,GY+0.03,7.6),new V3(0,0.05,6.0)]),mG));
+ const mc=mat(0xf4f6f8,{roughness:0.3});
+ [[0.2,4.0,14.0,-0.6],[22.7,4.0,13.6,2.6]].forEach(c=>{const g=new THREE.Group();g.position.set(c[0],c[1],c[2]);g.rotation.y=c[3];const b=cyl(0.07,0.07,0.32,mc,0.12,0,0,14);b.rotation.z=Math.PI/2;g.add(b,box(0.06,0.06,0.06,mc,0,0,0));SP.mep.add(g);});
+ SP.mep.add(box(0.21,0.6,0.6,M.red,22.85,1.6,14.6),box(0.2,0.6,0.6,mat(0x3e4a56),22.85,2.4,14.6));
+ const el=human(0x5cc18b);el.position.set(3,0,7.5);SP.mep.add(el);
+ [[6,7.5],[17,7.5]].forEach(p=>{const L=new THREE.PointLight(0xfff1d6,0,22);L.position.set(p[0],4.6,p[1]);SP.mep.add(L);inLights.push(L);});
+ S.add(SP.mep);
+}
+/* final works by others */
+SP.fin=new THREE.Group();
+{
+ [[11.5,-0.85,26,1],[11.5,15.85,26,1]].forEach(a=>SP.fin.add(box(a[2],0.12,a[3],M.conc2,a[0],-0.24,a[1])));
+ [[-0.6,7.5,1,15.8],[23.6,7.5,1,15.8]].forEach(a=>SP.fin.add(box(a[2],0.12,a[3],M.conc2,a[0],-0.24,a[1])));
+ const s=new THREE.Shape();s.moveTo(-5.4,-0.3);s.lineTo(-2.0,0);s.lineTo(-0.6,0);s.lineTo(-0.6,-0.3);s.lineTo(-5.4,-0.3);
+ const r=sh(new THREE.Mesh(new THREE.ExtrudeGeometry(s,{depth:4.9,bevelEnabled:false}),M.conc));r.position.z=5.05;SP.fin.add(r);
+ SP.fin.add(box(1.3,0.3,1.2,M.conc,23.75,-0.15,13.55));
+ const fl=new THREE.Group();fl.add(cyl(0.04,0.04,5,M.white,0,2.5,0,8));const cl=new THREE.Mesh(new THREE.PlaneGeometry(1.4,0.9),new THREE.MeshStandardMaterial({color:0x5cc18b,side:THREE.DoubleSide}));cl.position.set(0.7,4.5,0);fl.add(cl);fl.position.set(-3,GY,-2.5);SP.fin.add(fl);SP.flag=cl;
+ S.add(SP.fin);
+}
+
+/* =========================================================
+   STAGES
+   ========================================================= */
+const PH={f:'Производство',l:'Логистика',s:'Площадка'};
+const ST=[
+ {ph:'f',t:'Расчёт, КМ и КМД',D:9,wk:'Нед. 1–3',days:'15 раб. дней',cam:[[10.5,4.4,4.2],[4,1.3,10]],sun:[30,0,10],
+  where:'Конструкторский отдел поставщика',who:'ГИП, расчётчик, 2 конструктора КМД, инженеры ОВ и ЭО',tech:'ЛИРА-САПР или SCAD, Tekla / Advance Steel, AutoCAD',
+  ops:['Проверочный расчёт арочной оболочки C 305 × 114 на снег 0,80 кПа (μ = 0,8), ветер 0,77 кПа (зоны A, B, C), сейсмику 0,040g / 0,071g, температуру −18 / +34 °C.','Выбор толщины листа: 1,2 мм по чертежам КМ или 1,8 мм по расчёту CD-62223. Принятое значение заявляется в техчасти.','Проверка профилей на R15 без огнезащиты, степень огнестойкости IIIa по СП РК 2.02-101-2022.','КМД: развёртки панелей Л1 (≈ 23,0 м) и Л2, карты раскроя рулона, настройки гибки R = 7500, узлы опирания на Рц-1 и закладные М-1 с увязкой с КЖ.','Разделы АР, ОВ (4 дефлектора ТА-400), ЭО (8 × 60 Вт, Pр = 2,17 кВт), ВК и ВПВ по MR.','Ведомость металла, спецификация крепежа, ППР на монтаж и схемы строповки секций.'],
+  qc:['Проверка ГИПом и нормоконтроль','Согласование с KCOI, заложено до двух циклов замечаний','Штамп «В производство» на КМД'],
+  docs:['CD-62223','RB-62268','DD-62106','GA-62104','DD-62269'],res:'Комплект КМ и КМД в производство, ведомость металла ≈ 12,6 т, ППР.',flag:'Без ответа KCOI по толщине 1,2 / 1,8 мм КМД не выпустить: от неё зависят раскрой, масса и цена.',
+  lbl:[['Цифровая модель здания',[4,2.6,10]],['Рабочие места КМД',[3.5,1.7,16.4]]]},
+ {ph:'f',t:'Входной контроль металла',D:7,wk:'Нед. 2–4',days:'закупка 10–15 дней',cam:[[20.5,4.4,17.5],[14.2,0.9,8.5]],sun:[30,0,10],
+  where:'Склад металла, завод',who:'Кладовщик, инженер ОТК, стропальщик',tech:'Мостовой кран 10 т, микрометр, толщиномер покрытия, весы',
+  ops:['Приёмка рулонов оцинкованной стали 1,2 мм (или 1,8 мм), ширина 610 мм, покрытие Z275: 275 г/м², около 20 мкм на сторону. Для 11,4 т это 3 рулона.','Сверка сертификата 3.1 с ГОСТ 14918-2020: марка, химсостав, предел текучести, масса покрытия.','Замер толщины металла микрометром в трёх точках по ширине полосы.','Замер толщины цинка магнитным толщиномером, не меньше 5 точек на рулон.','Осмотр: белая ржавчина, вмятины, телескопичность и смятые кромки.','Труба □100 × 5 С245 (ГОСТ 30245-2003, ГОСТ 27772-2015) и уголок для Рц-1 проходят тот же контроль.','Маркировка номером плавки и запись в журнал входного контроля.'],
+  qc:['Несоответствие сертификату: рулон в изолятор брака','Взвешивание рулонов: сверка с накладной'],
+  docs:['ГОСТ 14918-2020','ГОСТ 30245-2003','ГОСТ 27772-2015','EN 10204 3.1'],res:'Металл допущен в производство, номера плавок привязаны к маркам КМД.',flag:'Здание должно служить 30 лет в климате Мангистау. Покрытие Z350 или Z275 с полимерным слоем стоит предложить опцией.',
+  lbl:[['Рулоны Z275, 1,2 × 610 мм',[13.5,1.9,4.6]],['Замер толщины',[15.8,0.5,12.05]],['Весы',[14,0.4,12.9]]]},
+ {ph:'f',t:'Резка и сварка каркаса торцов',D:8,wk:'Нед. 4–5',days:'7 раб. дней',cam:[[31,5.2,19],[25,1,8.2]],sun:[30,0,10],
+  where:'Заготовительный и сварочный участок',who:'Резчик, 2 аттестованных сварщика, слесарь-сборщик, ОТК',tech:'Ленточнопильный станок, полуавтоматы MIG/MAG, стапель, сверлильный станок',
+  ops:['Раскрой трубы □100 × 5 по КМД: стойки Ст1 переменной высоты под радиус арки и балки Б1 на +4,600, +5,700 и +2,100. Торец стойки режется под углом к арке.','Сверление отверстий под болты кл. B и под крепление обшивки Л2.','Сборка на стапеле, прихватка, сварка в CO₂ по ГОСТ 14771-76, катеты по КМ.','Ригель цоколя Рц-1: уголок с отверстиями под винты и пластинами под закладные М-1.','Технологические отверстия Ø12–16 в замкнутых профилях для выхода воздуха и слива цинка. Без них трубу раздувает в ванне.','Зачистка швов и удаление брызг перед цинкованием.'],
+  qc:['ВИК 100 % сварных швов','Геометрия по ГОСТ 23118-2019: длины, диагонали, отверстия','Маркировка каждой детали по КМД'],
+  docs:['DD-62106','DD-62269','ГОСТ 14771-76','ГОСТ 23118-2019'],res:'Каркас торцов 0,77 т и Рц-1 ≈ 0,9 т готовы к цинкованию.',
+  lbl:[['Ленточная пила',[21.3,1.9,4]],['Труба □100×5 С245',[25.5,0.8,1.6]],['Сварка в CO₂',[25.2,1.3,12.4]],['Каркас торца на стапеле',[27.4,1.1,11.4]]]},
+ {ph:'f',t:'Горячее цинкование',D:17,wk:'Нед. 5–6',days:'5–7 дней с перевозкой',cam:[[50,9.5,23],[39,1.4,10]],sun:[30,0,10],
+  where:'Цех горячего цинкования (свой или субподряд)',who:'Оператор линии, крановщик, контролёр',tech:'Ванны подготовки, ванна цинка 445–455 °C, кран-балка с траверсой',
+  ops:['Навеска изделий на траверсу с учётом слива цинка.','Обезжиривание в щелочном растворе.','Травление в соляной кислоте до чистого металла.','Промывка водой.','Флюсование: защита от окисления до погружения в цинк.','Сушка около 120 °C.','Погружение в расплав цинка 445–455 °C на 3–6 минут, медленный подъём.','Охлаждение и пассивация, удаление наплывов.','Подкраска повреждений составом «Цинол» по АС. Дуплекс-система (цинк + ГФ-021 / ПФ-115 по КМ) предлагается опцией.'],
+  qc:['Толщина покрытия: средняя ≥ 85 мкм, местная ≥ 70 мкм для стали 3–6 мм (ГОСТ 9.307-89, ISO 1461)','Адгезия, внешний вид, отсутствие непрокрасов','Протокол на каждую партию'],
+  docs:['ГОСТ 9.307-89','ISO 1461','RB-62095 п. 10','RB-62268 п. 17'],res:'Каркас оцинкован, есть протоколы толщины. Срок службы покрытия рассчитан на 30 лет.',flag:'КМ требует окраску ПФ-115 по ГФ-021, АС требует горячее цинкование. В техчасти выбранное покрытие нужно заявить явно.',
+  lbl:TANKS.map((t,i)=>[t[0],[TX(i),1.6,13.8]]).concat([['Траверса с каркасом',()=>new V3(hoist.x,hoist.y+0.9,11)]])},
+ {ph:'f',t:'Ворота, дверь, окна',D:8,wk:'Нед. 3–6',days:'10 раб. дней параллельно',cam:[[58,4.6,17.5],[51,1.8,10]],sun:[30,0,10],
+  where:'Сборочный участок и поставщики комплектующих',who:'Слесари-сборщики, электромонтёр (привод не нужен), ОТК',tech:'Сборочный стол, кондуктор створок, гайковёрты',
+  ops:['Ворота ВР1 3800 × 4600, распашные, 2 створки по 1900 мм. Каркас из профильной трубы, обшивка профлистом. ГОСТ 31174-2017.','Калитка ДСН 2060 × 960 в левой створке, усиленные петли, ригельные засовы, упоры створок.','Дверь Д1 ДСН 2060 × 860, стальная наружная по ГОСТ 31173-2016: замок, доводчик, уплотнитель.','Окна Ок1 3800 × 1000, 2 шт, алюминий по ГОСТ 21519-2003, одинарное остекление: склад не отапливается.','Дефлекторы Turbovent ТА-400 (ВЕ1–ВЕ4) с проходками и уплотнением.','Нащельники, отливы и уголки примыканий из оцинкованного листа.','Контрольная сборка ворот: диагонали, ход створок, зазоры.'],
+  qc:['Проверка размеров проёмов по факту КМД','Испытание хода створок и замков','Паспорта на изделия'],
+  docs:['DD-62097','ГОСТ 31174-2017','ГОСТ 31173-2016','ГОСТ 21519-2003','GA-66030'],res:'Проёмы и покупное оборудование готовы к упаковке.',flag:'АС показывает одни ворота, план ЭО 63277 — ворота на обоих торцах. Вторые ворота добавляют ≈ 1,85 млн ₸ без НДС: в смете это переключатель.',
+  lbl:[['Ворота ВР1 3800 × 4600',[51,5.2,5.5]],['Дверь Д1',[54.2,2.5,9.2]],['Окна Ок1',[50.2,1.4,16.9]],['Дефлекторы ТА-400',[53.8,1.0,16.8]]]},
+ {ph:'f',t:'ОТК, упаковка, маркировка',D:8,wk:'Нед. 6',days:'3 раб. дня',cam:[[67,6.5,22],[59,0.8,11]],sun:[30,0,10],
+  where:'Участок отгрузки',who:'Инженер ОТК, упаковщики, водитель погрузчика',tech:'Вилочный погрузчик, стреппинг-машина, принтер бирок',
+  ops:['Финальный контроль по ГОСТ 23118-2019 и комплектовочная ведомость по маркам Ст1, Б1, Рц-1.','Маркировка бирками и краской: марка, номер заказа, масса, номер места.','Каркас пакетами на деревянных прокладках, обвязка стальной лентой.','Ворота на поддоне в обрешётке, окна в жёсткой обрешётке с уголками.','Крепёж в ящиках с описью, рулоны на ложементах, обёрнуты от влаги.','Паспорта качества, сертификаты 3.1, протоколы цинкования, декларации ЕАЭС, сертификат СТ-KZ для местного содержания.','Фотоотчёт для KCOI. Заводская приёмка (FAT) по запросу.'],
+  qc:['Сверка мест с упаковочным листом','Фото каждого места'],
+  docs:['ГОСТ 23118-2019','Упаковочный лист','Паспорт КМ'],res:'Груз готов к отгрузке, документы собраны в один комплект.',
+  lbl:[['Ящики с воротами и окнами',[57,2.0,4.4]],['Пакеты каркаса',[59.5,0.8,9.4]],['Рулоны для мобильной линии',[59.6,1.8,19.6]],['ОТК',[57.2,1.9,10.9]]]},
+ {ph:'l',t:'Доставка DDP Жанаозен',D:10,wk:'Нед. 7',days:'3–7 дней в пути',cam:[[4,10,32],[4,1.5,0]],sun:[0,0,0],
+  where:'Завод → Актау → Жанаозен (≈ 150 км от Актау)',who:'Логист, 3 водителя, экспедитор',tech:'2 фуры 20 т, трал для мобильной линии, автокран своим ходом или аренда на месте',
+  ops:['Фура 1: рулоны на ложементах, крепление цепями. 11,4 т при 1,2 мм или 17,1 т при 1,8 мм, одна машина в обоих случаях.','Фура 2: каркас торцов, Рц-1, ворота, дверь, окна, дефлекторы, крепёж, герметики.','Трал: мобильная прокатно-гибочная линия для арочных панелей.','Автокран 25 т: свой или аренда в Жанаозене (дешевле, без перегона).','DDP: перевозка, погрузка и разгрузка, страхование, таможня и пошлины при импорте, НДС 16 %.','Разгрузка на площадке, складирование рулонов на брус под укрытием, акт приёмки материалов.'],
+  qc:['Сверка мест и пломб при разгрузке','Акт приёмки материалов: с него начинается отсчёт 30 дней оплаты'],
+  docs:['ТТН / CMR','Упаковочные листы','ЭСФ с НДС 16 %','Страховой полис'],res:'Все материалы на площадке, акт приёмки подписан.',flag:'Готовая арочная панель имеет хорду 15 м и высоту 7,5 м, в транспортный габарит она не входит. Поэтому арку прокатывают и гнут на площадке из рулона. В техчасти нужно назвать два места производства: завод (каркас, ворота) и площадку (панели).',
+  lbl:[['Фура 1: рулоны',[-30,4.4,-1.8]],['Фура 2: каркас, ворота, окна',[-8,4.4,-1.8]],['Трал: мобильная линия',[14,4.8,-1.8]],['Автокран 25 т',[37,4.4,-1.8]]]},
+ {ph:'s',t:'Приёмка плиты и разбивка осей',D:9,wk:'Нед. 8, день 1',days:'1 день',cam:[[-15,13,-17],[9,0,6]],sun:[8,0,4],
+  where:'Площадка, Жанаозен',who:'Геодезист, прораб поставщика, технадзор KCOI',tech:'Тахеометр, нивелир, рулетка 50 м',
+  ops:['Приёмка плиты 24 × 15,8 м по акту от генподрядчика: фундамент вне объёма поставщика.','Проверка отметки ±0,000 = 193,75 абс. и горизонтальности плиты.','Вынос осей 1–5 и А–Г, закрепление обносками.','Проверка закладных М-1: шаг 2000 мм, крайние 1500, 13 × 2 шт, отклонения в плане и по высоте.','Исполнительная схема и акт передачи фронта работ.','Организация площадки: бытовки, склад, зона раскладки секций 16 × 8 м, подъезд крана, ограждение опасной зоны, наряд-допуск.'],
+  qc:['Отклонения закладных фиксируются до начала монтажа','Подпись технадзора на исполнительной схеме'],
+  docs:['DB-62290','DD-62096','Акт передачи фронта работ'],res:'Фронт работ принят, оси вынесены.',flag:'Если действующим окажется альбом АС (столбчатые Стф1), узел опирания меняется. Уточнить до выпуска КМД.',
+  lbl:[['Тахеометр',[-3.5,1.6,-3.5]],['Закладные М-1, шаг 2000',[11.5,0.3,0.12]],['Плита 24 × 15,8 × 0,2 (вне объёма)',[11.5,0.4,7.5]],['Бытовки',[32,2.6,-14.4]]]},
+ {ph:'s',t:'Ригель цоколя Рц-1',D:9,wk:'Нед. 8, дни 2–3',days:'2 дня',cam:[[-9,11,-12],[11.5,0,7.5]],sun:[8,0,4],
+  where:'Периметр плиты',who:'2 монтажника, сварщик, геодезист',tech:'Сварочный инвертор, нивелир, болтовой инструмент',
+  ops:['Раскладка уголка Рц-1 по периметру по разбивочным осям.','Выверка в плане и по высоте: от точности Рц-1 зависит посадка всех 76 панелей.','Приварка пластин к закладным М-1 или крепление на болтах кл. B по КМД.','Подкраска сварных мест «Цинолом».','Контроль прямолинейности сторон и разности диагоналей прямоугольника 23 × 15 м.'],
+  qc:['Исполнительная схема Рц-1','Акт скрытых работ на узлы крепления к М-1'],
+  docs:['DD-62260 (нет в папке)','DD-62106','DB-62290'],res:'Опорный контур готов принять арку.',flag:'Лист DD-62260 с сечением Рц-1 в комплекте отсутствует. Масса в ведомости оценочная.',
+  lbl:[['Рц-1 по периметру',()=>plWelder.position.clone().add(new V3(0,2.1,0))],['Ось 1',[0,0.2,-1.6]],['Ось 5',[23,0.2,-1.6]]]},
+ {ph:'s',t:'Мобильная линия: профилирование',D:10,wk:'Нед. 8, дни 3–4',days:'1,5 дня',cam:[[-27,6,-14],[-14,1.3,-5]],sun:[-12,0,-4],
+  where:'Площадка у оси 1',who:'Оператор линии, 2 помощника',tech:'Прокатно-гибочная линия на прицепе, дизель-генератор',
+  ops:['Установка линии на ровном основании, выверка по уровню, подключение генератора.','Рулон на размотчик краном или погрузчиком, заправка полосы в клети.','Полоса 610 мм проходит 14 клетей и становится C-профилем 305 × 114 с замковыми кромками.','Отрезка в размер по КМД: прямые Л2 для торцов разной длины (≈ 98 шт), затем Л1 для арки.','Скорость около 10–12 м/мин.','При ветре сильнее 10 м/с работа с длинными панелями прекращается.'],
+  qc:['Ширина и глубина профиля, геометрия замка на первой панели и каждой 10-й','Целостность цинка на кромках'],
+  docs:['DD-62269','КМД: карта раскроя'],res:'Готовы торцевые панели Л2, линия настроена на арку.',
+  lbl:[['Размотчик с рулоном',[-14,3,-11]],['14 клетей профилирования',[-14,2.5,-6]],['C-профиль 305 × 114',()=>lineExit.clone().add(new V3(0,0.4,2.6))],['Штабель Л2',[-19,1.2,-5]],['Генератор',[-17.5,1.6,-8]]]},
+ {ph:'s',t:'Гибка арочных панелей R = 7500',D:10,wk:'Нед. 8–9',days:'2 дня',cam:[[-36,10,2],[-15,3.8,5]],sun:[-12,0,4],
+  where:'Мобильная линия',who:'Оператор, 2 помощника',tech:'Гибочная приставка линии, шаблон радиуса, рулетка',
+  ops:['Профиль из профилировщика сразу идёт в гибочную приставку: полки и стенка гофрируются, панель уходит в дугу.','Радиус настраивается на первой панели: проверяются хорда 15,0 м и стрела 7,5 м по шаблону.','Развёртка Л1 ≈ 23,0 м, масса ≈ 130 кг при 1,2 мм.','Панель снимают с поддержкой и ставят в штабель «вложением», с порядковым номером.','Всего 76 панелей Л1: около 4 минут на панель с учётом снятия.'],
+  qc:['Радиус по шаблону на каждой 5-й панели','Нет трещин цинка в зоне гофра','Замок не смят'],
+  docs:['DD-62106','CD-62223 §5'],res:'76 арочных панелей готовы к сборке в секции.',
+  lbl:[['Гибочная приставка',[-14,3.2,-2.5]],['Панель Л1, развёртка ≈ 23 м',()=>new V3(-14,lineExit.y+7.5*Math.min(1,Math.max(0.3,stT/ (ST[10].D*0.7))),5)],['Штабель панелей',[-23,7.6,4.5]]]},
+ {ph:'s',t:'Сборка секций на земле',D:10,wk:'Нед. 9',days:'параллельно с подъёмом',cam:[[-7,12,-27],[8.5,0.4,-12]],sun:[8,0,-8],
+  where:'Зона раскладки у оси А',who:'2 монтажника, оператор закаточной машинки',tech:'Электрическая закаточная машинка, монтажные клещи',
+  ops:['Секцию собирают из 4 панелей: ширина ≈ 1,22 м, масса ≈ 0,53 т при 1,2 мм или ≈ 0,8 т при 1,8 мм.','Соседние панели вставляют в замок.','Закаточная машинка идёт по шву на всю длину ≈ 23 м и завальцовывает замок.','Проверка отсутствия перекоса секции, установка строповочных узлов по схеме ППР.','Всего 19 секций.'],
+  qc:['Сплошность закатки по всей длине шва','Совпадение торцов панелей'],
+  docs:['ППР: схема строповки','DD-62106'],res:'Секция готова к подъёму.',
+  lbl:[['Секция из 4 панелей',[8.5,1.6,-12.5]],['Закаточная машинка',()=>SP.seamer.visible?SP.seamer.position.clone().add(new V3(0,0.5,0)):null],['Автокран 25 т',[12,4.4,-4.6]]]},
+ {ph:'s',t:'Подъём и установка секций',D:30,wk:'Нед. 9',days:'4 дня',cam:[[-19,17,-29],[10,3,2]],sun:[10,0,2],
+  where:'Здание, от оси 1 к оси 5',who:'Крановщик, 2 стропальщика, 2 монтажника на подъёмнике, сигнальщик',tech:'Автокран 25 т, траверса, расчалки, подъёмник',
+  ops:['Строповка за траверсу, подъём с поворотом из горизонтального положения в вертикальное.','Установка опорами на Рц-1 по осям А и Г.','Первая секция у оси 1 выверяется по вертикали и раскрепляется расчалками особенно тщательно: от неё строится всё здание.','Следующая секция подаётся вплотную, межсекционный замок закатывается с подъёмника.','19 секций × 4 панели = 76 панелей. Темп 4–6 секций в смену.','При ветре сильнее 10 м/с подъём запрещён. Опасная зона огорожена.'],
+  qc:['Вертикальность каждой секции','Посадка на Рц-1 без зазоров'],
+  docs:['ППР','СН РК 1.03-05-2011','Наряд-допуск на работы краном'],res:'Арочная оболочка собрана по всей длине 23 м.',
+  lbl:[['Секция в подъёме',()=>SP.hook.visible?SP.hook.position.clone().add(new V3(0,0.6,0)):null],['Расчалки первой секции',[-3,3,-1]],['Ось 1',[0,0.3,-1.8]]]},
+ {ph:'s',t:'Замыкание оболочки, крепление к Рц-1',D:9,wk:'Нед. 9–10',days:'1,5 дня',cam:[[-17,14,-15],[11.5,3,7.5]],sun:[11,0,7],
+  where:'Здание',who:'2 монтажника, оператор закаточной машинки',tech:'Закаточная машинка, шуруповёрты, подъёмник',
+  ops:['Закатка всех межсекционных швов по полной длине.','Крепление нижних концов панелей к Рц-1 самонарезающими винтами с ЭПДМ-шайбой, шаг по КМД.','Снятие расчалок после замыкания оболочки.','Контроль геометрии: верх арки +7,200, вертикальность торцевых арок.','Осмотр цинка и подкраска царапин.'],
+  qc:['Исполнительная схема геометрии арки','Акт скрытых работ на узел опирания'],
+  docs:['DD-62106','CD-62223 §5'],res:'Несущая оболочка готова. По расчёту смещения не больше 7,5 мм при допустимых 50 мм.',
+  lbl:[['+7,200',[11.5,7.6,7.5]],['Крепление к Рц-1',[11.5,0.4,0]],['Закатка межсекционных швов',()=>SP.seamer.visible?SP.seamer.position.clone().add(new V3(0,0.4,0)):null]]},
+ {ph:'s',t:'Каркас и обшивка торцов',D:12,wk:'Нед. 10',days:'4 дня',cam:[[-15,7,19],[4,3,7.5]],sun:[4,0,7],
+  where:'Торцы по осям 1 и 5',who:'4 монтажника',tech:'2 ножничных подъёмника, шуруповёрты, ножницы по металлу',
+  ops:['Монтаж стоек Ст1 и балок Б1 □100 × 5 вокруг проёмов: ворота 3800 × 4600 (Б1 на +4,600), окна (Б1 на +5,700), дверь (Б1 на +2,100).','Крепление стоек к Рц-1 внизу и к арке вверху.','Обшивка прямыми панелями Л2 вертикально, соединение в замок.','Крепление Л2 к Рц-1 и к арке, обрезка верха по радиусу.','Нащельники по контуру арки и проёмов.'],
+  qc:['Вертикальность стоек','Размеры проёмов в свету до навески ворот'],
+  docs:['DD-62106','DD-62269','GA-62104'],res:'Торцы закрыты, проёмы готовы под заполнение.',
+  lbl:[['Стойки Ст1 □100×5',[0,4.2,5.6]],['Обшивка Л2',[0,3.8,2.5]],['Проём ВР1 3800 × 4600',[0,2.3,7.5]]]},
+ {ph:'s',t:'Ворота, дверь, окна, дефлекторы',D:9,wk:'Нед. 10–11',days:'2 дня',cam:[[-16,5.5,3],[2,3,7.5]],sun:[4,0,7],
+  where:'Торцы и кровля',who:'3 монтажника',tech:'Подъёмник, кран-манипулятор для створок',
+  ops:['Навеска створок ВР1, регулировка, проверка калитки.','Дверь Д1 в ось 5 у оси Г.','Окна Ок1 на +4,700…+5,700, по одному на торец.','Прорезка 4 отверстий Ø400 в арке, установка проходок с уплотнением и дефлекторов ТА-400 (ВЕ1–ВЕ4).','Герметизация примыканий, отливы и нащельники.'],
+  qc:['Ход створок и замков','Пролив кровли у проходок дефлекторов'],
+  docs:['DD-62097','DD-66029','GA-66030'],res:'Здание закрыто и вентилируется.',
+  lbl:[['Ворота ВР1',[0,4.9,7.5]],['Окно Ок1',[0,6.0,7.5]],['Дефлекторы ТА-400',[8,8.5,8.4]],['Герметизация примыканий',[0,0.6,9.4]]]},
+ {ph:'s',t:'Освещение, электрика, заземление',D:8,wk:'Нед. 11',days:'2 дня',cam:[[20.5,2.2,7.5],[2,3.4,7.5]],sun:[11,0,7],
+  where:'Внутри склада',who:'2 электромонтажника, ЭТЛ',tech:'Подъёмник, мегаомметр, измеритель сопротивления заземления',
+  ops:['Щит ЩР у ворот, трос подвеса на +5,0 м.','8 светильников ARCTIC.OPL ECO LED 60 Вт IP65, аварийные 18 Вт на +2,5 м.','Кабели ВВГнг(А)-LS для рабочего и ВВГнг(А)-FRLS для аварийного света.','Контур заземления (треугольник 3 м), присоединение металлоконструкций.','Замеры сопротивления изоляции и заземления.','Крепления и кабель-каналы для смежников: ПС, СОУЭ, камеры CAM 40–42, шкаф ВН №13.'],
+  qc:['Протоколы ЭТЛ','Проверка аварийного освещения'],
+  docs:['DD-63277','FB-63276','RB-63275','DD-66580'],res:'Свет работает, металлоконструкции заземлены.',flag:'Монтаж ЭО в RFQ прямо не назван. В смете это отдельная опция.',
+  lbl:[['LED 60 Вт на тросе +5,0',[9,5.4,4.4]],['Щит ЩР',[0.2,2.1,4.6]],['Аварийный 18 Вт',[0.12,2.9,9.8]]]},
+ {ph:'s',t:'Сдача объекта',D:10,wk:'Нед. 11',days:'1–2 дня + комиссия',cam:[[-21,15,-19],[11.5,2,7.5]],sun:[11,0,7],orbit:true,
+  where:'Площадка',who:'Прораб, ИТР поставщика, комиссия KCOI',tech:'—',
+  ops:['Уборка, вывоз техники, линии и отходов.','Исполнительная документация: схемы, акты скрытых работ, журналы работ и сварки, сертификаты, паспорта, протоколы ЭТЛ.','Комиссия KCOI, перечень замечаний, устранение.','Акт приёмки здания.','Отмостка, пандус и крыльцо делает генподрядчик: они вне объёма поставщика.','Гарантийное письмо.'],
+  qc:['Все замечания закрыты','Комплект исполнительной документации передан'],
+  docs:['Акт приёмки','Исполнительная документация'],res:'Склад сдан. Оплата по RFQ через 30 дней после приёмки материалов и сертификатов.',
+  lbl:[['Холодный склад 23 × 15 м, сдан',[11.5,8.4,7.5]],['Пандус Пн1 (генподрядчик)',[-3,0.5,7.5]],['Акт приёмки',[-3,4.9,-2.5]]]}
+];
+
+/* ---------- UI ---------- */
+const bar=document.getElementById('pBar');const segBtns=[];
+ST.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className=s.ph;b.title=(i+1)+'. '+s.t;b.setAttribute('aria-label','Этап '+(i+1)+': '+s.t);b.innerHTML='<i></i><span>'+(i+1)+'</span>';b.addEventListener('click',()=>{playAll=false;updPlay();go(i);});bar.appendChild(b);segBtns.push(b);});
+const infoEl=document.getElementById('pInfo');
+function renderInfo(i){const s=ST[i];
+ document.getElementById('pKicker').textContent=PH[s.ph]+' · этап '+(i+1)+' из 18';
+ document.getElementById('pTitle').textContent=s.t;
+ document.getElementById('pBanner').textContent=(i+1)+' / 18 · '+s.t;
+ document.getElementById('pWeek').textContent=s.wk;document.getElementById('pDays').textContent=s.days;
+ infoEl.innerHTML='<dl><dt>Где</dt><dd>'+esc(s.where)+'</dd><dt>Кто</dt><dd>'+esc(s.who)+'</dd><dt>Техника</dt><dd>'+esc(s.tech)+'</dd><dt>Срок</dt><dd>'+esc(s.wk+', '+s.days)+'</dd></dl>'
+  +'<h4>Операции</h4><ol>'+s.ops.map(o=>'<li>'+esc(o)+'</li>').join('')+'</ol>'
+  +'<h4>Контроль качества</h4><ul>'+s.qc.map(o=>'<li>'+esc(o)+'</li>').join('')+'</ul>'
+  +'<h4>Документы и нормы</h4><div>'+s.docs.map(d=>'<span class="doc">'+esc(d)+'</span>').join('')+'</div>'
+  +'<div class="res"><b>Результат.</b> '+esc(s.res)+'</div>'+(s.flag?'<div class="flag">'+esc(s.flag)+'</div>':'');
+ infoEl.scrollTop=0;
+ document.querySelectorAll('.phase').forEach(b=>b.classList.toggle('on',PH[s.ph]===PH[ST[+b.dataset.ph].ph]));
+ segBtns.forEach((b,j)=>{b.classList.toggle('on',j===i);b.classList.toggle('done',j<i);b.querySelector('i').style.width=j<i?'100%':'0';});
+}
+let cur=0, stT=0, gt=0, playAll=false, holdT=0, orbitOn=false;
+let flyT=1;const fromP=new V3(),fromT=new V3(),toP=new V3(),toT=new V3();
+function fly(i,instant){const c=ST[i].cam;fromP.copy(camera.position);fromT.copy(controls.target);toP.set(...c[0]);toT.set(...c[1]);flyT=(instant||reduce)?0.999:0;}
+function go(i){cur=Math.max(0,Math.min(ST.length-1,i));stT=reduce?ST[cur].D:0;holdT=0;
+ const s=ST[cur];F.visible=cur<=5;Rd.visible=cur===6;S.visible=cur>=7;
+ setSun(new V3(...s.sun));orbitOn=!!s.orbit;renderInfo(cur);setCallouts(s.lbl);fly(cur);}
+const bPlay=document.getElementById('pPlay');
+function updPlay(){bPlay.textContent=playAll?'❚❚ Пауза':'▶ Весь цикл';bPlay.classList.toggle('on',playAll);}
+bPlay.addEventListener('click',()=>{playAll=!playAll;if(playAll&&cur===ST.length-1&&stT>=ST[cur].D)go(0);updPlay();});
+document.getElementById('pPrev').addEventListener('click',()=>{playAll=false;updPlay();go(cur-1);});
+document.getElementById('pNext').addEventListener('click',()=>{playAll=false;updPlay();go(cur+1);});
+document.getElementById('pReplay').addEventListener('click',()=>{stT=0;holdT=0;});
+document.querySelectorAll('.phase').forEach(b=>b.addEventListener('click',()=>{playAll=false;updPlay();go(+b.dataset.ph);}));
+const bLbl=document.getElementById('pLbl');bLbl.classList.add('on');bLbl.addEventListener('click',()=>{showLbl=!showLbl;bLbl.classList.toggle('on',showLbl);});
+document.getElementById('pCam').addEventListener('click',()=>fly(cur));
+controls.addEventListener('start',()=>{orbitOn=false;});
+
+/* ---------- per-frame updates ---------- */
+function updFactory(dt){
+ const s=cur, t=stT;
+ holoPivot.rotation.y+=dt*0.25;
+ const nL=s===0?Math.floor(clamp01(t/(ST[0].D*0.75))*holoLines.length):holoLines.length;holoLines.forEach((l,i)=>l.visible=i<nL);
+ const sc=0.6+0.4*Math.sin(gt*4);pulse.scale.set(sc,sc,sc);pulse.material.opacity=1-0.6*sc;
+ sawArm.position.y=1.45+0.15*Math.sin(gt*2.2);tubeFeed.position.x=25.3+0.4*Math.sin(gt*1.1);
+ const a=sparks.geometry.attributes.position;const on=Math.sin(gt*3)>-0.3;
+ for(let i=0;i<a.count;i++){if(on){const u=rnd(),v=rnd()*Math.PI*2;a.setXYZ(i,weldPt.x+Math.cos(v)*u*0.35,weldPt.y+rnd()*0.25-0.05,weldPt.z+Math.sin(v)*u*0.35);}else a.setXYZ(i,0,-50,0);}a.needsUpdate=true;
+ sparkLight.intensity=on?1.2+rnd()*1.5:0;
+ // galvanizing
+ if(s===3){const T0=0.4,P=2.2;let x=31.5,y=3.2,g=false;
+  if(t>T0){const k=Math.floor((t-T0)/P),u=(t-T0-k*P)/P;
+   if(k>=TANKS.length){x=TX(6)+ease((t-T0-TANKS.length*P)/1.2)*2.4;y=3.2;g=true;}
+   else{const px=k===0?31.5:TX(k-1);if(u<0.27){x=px+(TX(k)-px)*easeIO(u/0.27);y=3.2;}else{x=TX(k);y=u<0.55?3.2-2.6*easeIO((u-0.27)/0.28):u<0.73?0.6:0.6+2.6*easeIO((u-0.73)/0.27);}
+    g=k>5||(k===5&&u>0.6);}}
+  setHoist(x,y,g);}
+ else setHoist(cur>3?TX(6)+2.4:31.5,3.2,cur>3);
+ const f=fumes.geometry.attributes.position;for(let i=0;i<f.count;i++){let y=f.getY(i)+dt*0.6;if(y>4.2)y=1.4;f.setY(i,y);}f.needsUpdate=true;
+ const op=s===4?(Math.sin(gt*1.2)*0.5+0.5):0.15;gLeaves.forEach(p=>p.rotation.y=-p.userData.dir*op*Math.PI*0.5);
+ fork.position.x=59+2.6*Math.sin(gt*0.5);
+}
+function updRoad(dt){const v=reduce?0:dt*14;movers.forEach(o=>{o.position.x-=v;if(o.position.x<-240)o.position.x+=480;});roadTrucks.forEach((tk,i)=>{tk.position.y=Math.abs(Math.sin(gt*7+i))*0.02;});}
+const hookRest=new V3(8.5,6.5,-12.5);
+function hookOf(g){g.updateMatrixWorld(true);return g.localToWorld(new V3(0,7.7,7.5));}
+function setCable(tip,hook,g){const p=SP.cable.geometry.attributes.position;p.setXYZ(0,tip.x,tip.y,tip.z);p.setXYZ(1,hook.x,hook.y,hook.z);p.needsUpdate=true;SP.hook.position.copy(hook);
+ const q=SP.slings.geometry.attributes.position;if(g){const a=g.localToWorld(new V3(0,yArch(3.5)-0.05,3.5)),b=g.localToWorld(new V3(0,yArch(11.5)-0.05,11.5));q.setXYZ(0,a.x,a.y,a.z);q.setXYZ(1,hook.x,hook.y-0.35,hook.z);q.setXYZ(2,b.x,b.y,b.z);SP.slings.visible=true;}else SP.slings.visible=false;q.needsUpdate=true;}
+function updSite(dt){
+ const s=cur,t=stT,D=ST[s]?ST[s].D:1;
+ SP.cabins.visible=s<=16;SP.geo.visible=s===7;
+ if(s===7){const u=(t*0.18)%1;const ex=[0,1.5,3.5,5.5,7.5,9.5,11.5,13.5,15.5,17.5,19.5,21.5,23];const k=Math.min(ex.length-1,Math.floor(u*ex.length));SP.prism.position.set(ex[k]+0.25,GY+0.3,-0.5);const b=geoBeam[0].geometry.attributes.position;b.setXYZ(1,ex[k]+0.55,GY+2.35,-0.5);b.needsUpdate=true;}
+ // plinth
+ SP.plinth.visible=s>=8;
+ if(s>=8){const f=s===8?clamp01(t/(D*0.85)):1;const L=f*SP.plinthLen;let tip=null;
+  plSegs.forEach(g=>{const l=Math.max(0,Math.min(g.len,L-g.a));g.m.visible=l>0.001;g.m.scale.x=Math.max(l,0.001);if(l>0&&l<g.len)tip=g.s.clone().lerp(g.e,l/g.len);});
+  const a=plSpark.geometry.attributes.position;plSpark.visible=s===8&&!!tip;plWelder.visible=s===8&&!!tip;
+  if(tip){for(let i=0;i<a.count;i++)a.setXYZ(i,tip.x+(rnd()-0.5)*0.4,0.1+rnd()*0.3,tip.z+(rnd()-0.5)*0.4);a.needsUpdate=true;plWelder.position.set(tip.x+(tip.z<1?0:0.8),GY+0.3,tip.z<1?tip.z-0.9:tip.z+(tip.z>14?0.9:0));}}
+ // mobile line
+ const lineOn=s>=9&&s<=13;LN.g.visible=lineOn;SP.gen.visible=lineOn;SP.lineCrew.visible=s===9||s===10;LN.bender.visible=s>=10&&s<=13;
+ if(lineOn&&(s===9||s===10)&&!reduce)LN.coil.rotation.z-=dt*1.5;
+ SP.straight.visible=s===9;if(s===9){SP.straight.scale.z=Math.max(0.01,((t*1.6)%5.5));}
+ SP.stack.visible=s>=9&&s<=13;const nS=s===9?Math.floor(clamp01(t/D)*14):14;SP.stack.children.forEach((m,i)=>m.visible=i<nS);
+ SP.arc.visible=s===10;if(s===10){const f=clamp01((t%(D*0.5))/(D*0.42));PGR.setDrawRange(0,Math.max(1,Math.floor(f*72))*30);}
+ SP.arcStack.visible=s>=10&&s<=11;const nA=s===10?Math.floor(clamp01(t/D)*12):12;SP.arcStack.children.forEach((m,i)=>m.visible=i<nA);
+ // crane & sections
+ const craneOn=s>=11&&s<=13;CR.g.visible=craneOn;SP.cable.visible=craneOn;SP.hook.visible=craneOn;SP.craneCrew.visible=s===11||s===12;SP.lay.visible=s===11||s===12;
+ SP.seamer.visible=false;SP.slings.visible=false;
+ secs.forEach(g=>g.visible=false);
+ let hook=hookRest.clone(),hg=null;
+ if(s===11){const g=secs[0];g.visible=true;poseSection(g,0);g.userData.panels.forEach((m,j)=>{const e=ease((t-j*1.2)/1.0);m.position.x=(j*0.305-0.61)-2.5*(1-e);});
+  const st0=5;if(t>st0){const k=Math.min(2,Math.floor((t-st0)/1.6)),u=clamp01((t-st0-k*1.6)/1.6);const th=TH0+(Math.PI-2*TH0)*u;const sx=(k+1)*0.305-0.61;
+   g.updateMatrixWorld(true);SP.seamer.position.copy(g.localToWorld(new V3(sx,CY+(R+0.12)*Math.sin(th),CZ+(R+0.12)*Math.cos(th))));SP.seamer.visible=true;}}
+ else if(s===12){const per=D/NSEC;const n=Math.min(NSEC,Math.floor(t/per));const u=(t-n*per)/per;
+  secs.forEach((g,i)=>{resetPanels(g);if(i<n){g.visible=true;poseSection(g,1);}else if(i===n){g.visible=true;const sv=easeIO((u-0.14)/0.66);poseSection(g,sv);hook=hookOf(g);hg=g;if(u<0.14){hook.y+= (0.14-u)*25;hg=u>0.07?g:null;}}else if(i===n+1&&u>0.14){g.visible=true;poseSection(g,0);}});
+  if(n>=NSEC)hook=hookRest.clone();SP.guys.visible=n>=1;}
+ else if(s>=13){secs.forEach(g=>{resetPanels(g);g.visible=true;poseSection(g,1);});}
+ if(s!==12)SP.guys.visible=s===13&&t<D*0.5;
+ if(craneOn){const tip=hook.clone().add(new V3(0,3.2,0));aimCrane(CR,tip);setCable(tip,hook,hg);}
+ if(s===13){const k=1+Math.min(17,Math.floor(clamp01(t/D)*18)),u=(t/D*18)%1;const th=TH0+(Math.PI-2*TH0)*u;const x=X0+4*k*0.305;SP.seamer.position.set(x,CY+(R+0.15)*Math.sin(th),CZ+(R+0.15)*Math.cos(th));SP.seamer.visible=true;}
+ SP.screws.visible=s>=13;SP.screws.geometry.setDrawRange(0,s===13?Math.floor(clamp01(t/(D*0.9))*152):152);
+ // end walls
+ SP.frames.visible=s>=14;SP.walls.visible=s>=14;
+ if(s>=14){const fh=s===14?ease(t/1.5):1;SP.frames.scale.y=Math.max(0.01,fh);const nk=s===14?clamp01((t-1.5)/(D-2.5))*NK:NK+1;
+  strips.forEach(m=>{const vis=m.userData.k<nk;m.visible=vis;if(vis){const e=s===14?ease((nk-m.userData.k)/2):1;m.position.y=m.userData.y+(1-e)*3;}});
+  const lk=Math.min(NK-1,Math.floor(nk));const zc=0.1525+lk*0.305;const h=Math.max(0.3,Math.min(5.0,yArch(zc)-2.6));
+  SP.lift1.visible=s===14||s===15;SP.lift2.visible=s===14||s===15;setLift(SP.lift1,1.4,s===15?7.5:zc,s===15?3.6:h);setLift(SP.lift2,21.6,s===15?11:zc,s===15?2.5:h);}
+ else{SP.lift1.visible=false;SP.lift2.visible=false;}
+ // openings
+ SP.open.visible=s>=15;SP.vents.visible=s>=15;SP.seal.visible=s===15;
+ if(s>=15){const op=s===15?Math.sin(Math.PI*clamp01((t-2.5)/4.5)):(s===17?0.35:0);leaves.forEach(p=>p.rotation.y=-p.userData.dir*op*Math.PI*0.55);
+  SP.sealMat.opacity=0.4+0.6*Math.abs(Math.sin(gt*3));
+  turbines.forEach((o,i)=>{const e=s===15?ease((t-1-i*0.5)/1.2):1;o.t.position.y=o.t.userData.y+(1-e)*6;if(!reduce)o.spin.rotation.y+=dt*(2.2+i*0.3);});}
+ // MEP
+ SP.mep.visible=s>=16;const li=s===16?ease((t-2)/3):(s>16?1:0);
+ lampMats.forEach((m,i)=>m.emissiveIntensity=i===lampMats.length-1?li*1.2:li*1.4);inLights.forEach(L=>L.intensity=li*1.1);
+ SP.fin.visible=s>=17;if(s>=17&&!reduce)SP.flag.rotation.y=Math.sin(gt*2)*0.25;
+}
+
+function resize(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(host);resize();
+let visible=true;
+if('IntersectionObserver' in window)new IntersectionObserver(es=>{visible=es[0].isIntersecting;},{rootMargin:'200px'}).observe(host);
+camera.position.set(...ST[0].cam[0]);controls.target.set(...ST[0].cam[1]);
+go(0);fly(0,true);
+const clock=new THREE.Clock();
+function loop(){
+ requestAnimationFrame(loop);
+ const dt=Math.min(clock.getDelta(),0.05);
+ if(!visible)return;
+ if(!reduce){gt+=dt;stT+=dt;}
+ const D=ST[cur].D;
+ if(stT>D){if(playAll){holdT+=dt;if(holdT>1.4){if(cur<ST.length-1)go(cur+1);else{playAll=false;updPlay();}}}stT=Math.min(stT,D+0.0001);}
+ segBtns[cur].querySelector('i').style.width=(clamp01(stT/D)*100)+'%';
+ if(F.visible)updFactory(dt);if(Rd.visible)updRoad(dt);if(S.visible)updSite(dt);
+ if(flyT<1){flyT=Math.min(1,flyT+dt/1.2);const k=ease(flyT);camera.position.lerpVectors(fromP,toP,k);controls.target.lerpVectors(fromT,toT,k);}
+ if(orbitOn&&!reduce&&flyT>=1){const o=controls.target;const v=camera.position.clone().sub(o);v.applyAxisAngle(new V3(0,1,0),dt*0.12);camera.position.copy(o).add(v);}
+ controls.update();renderer.render(scene,camera);drawCallouts();
+}
+loop();
+})();
+</script>
